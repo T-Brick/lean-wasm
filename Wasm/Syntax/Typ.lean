@@ -1,6 +1,7 @@
 /- Encoding of defintion WASM's type defintion:
     https://webassembly.github.io/spec/core/syntax/types.html
 -/
+import Wasm.Util
 import Wasm.Syntax.Opcode
 
 namespace Wasm.Syntax.Typ
@@ -72,19 +73,41 @@ structure Func where
   args   : Result
   result : Result
 
+nonrec def Func.toString (func : Func) : String :=
+  let args := String.concatWith " " (func.args.map (fun a => s!"(param {a})"))
+  let res  := String.concatWith " " (func.result.map (fun r => s!"(result {r})"))
+  s!"(func ({args}) ({res}))"
+instance : ToString Func := ⟨Func.toString⟩
+
+
 structure Limit where
   min : UInt32 -- number of page sizes
   max : Option UInt32
 
+def Limit.toString (lim : Limit) : String :=
+  match lim.max with
+  | .none => s!"{lim.min}"
+  | .some m => s!"{lim.min} {m}"
+instance : ToString Limit := ⟨Limit.toString⟩
+
 @[inline] def Mem := Limit
+instance : ToString Mem := ⟨Limit.toString⟩
 
 @[inline] def Table := Limit × Ref
+instance : ToString Table := ⟨fun (lim, ref) => s!"{lim} {ref}"⟩
 
 inductive Mut
 | const
 | var
 
 def Global := Mut × Val
+
+nonrec def Global.toString (glb : Global) : String :=
+  let (m, v) := glb
+  match m with
+  | .const => toString v
+  | .var   => s!"(mut {v})"
+instance : ToString Global := ⟨Global.toString⟩
 
 inductive Extern
 | func  : Func → Extern

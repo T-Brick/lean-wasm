@@ -2,6 +2,13 @@ import Std
 
 namespace Wasm
 
+def String.concatWith [ToString α] (c : String) : List α → String
+  | .nil => ""
+  | .cons x .nil => toString x
+  | .cons x (.cons y ys) =>
+    String.append (String.append (toString x) c) (concatWith c (.cons y ys))
+
+
 def Vec.max_length : Nat := Nat.pow 2 32
 
 structure Vec (α : Type u) where
@@ -11,9 +18,7 @@ structure Vec (α : Type u) where
 namespace Vec
 
 nonrec def toString [ToString α] (v : Vec α) : String :=
-  List.foldr (fun x acc => String.append (toString x)
-    (String.append " " acc)) "" v.list
-  |> String.trim
+  String.concatWith " " v.list
 
 def nil : Vec α := ⟨[], by simp⟩
 
@@ -48,8 +53,6 @@ def map (f : α → β) (v : Vec α) : Vec β := ⟨v.list.map f, by
     rw [List.length_map]
     exact v.maxLen
   ⟩
-
-#check List.length_set
 
 @[inline] def length (v : Vec α) := v.list.length
 @[inline] def get (v : Vec α) (i : Fin v.length) := v.list.get i

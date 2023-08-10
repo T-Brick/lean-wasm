@@ -454,6 +454,8 @@ def mem_int (instr : Syntax.Instr.Memory.Integer nn)
 
 namespace Memory
 
+/- todo: rewriting read/write memory
+
 inductive Integer.Load (instr : Numeric.Sign → Memory.Arg → Memory.Integer nn)
                : (nBits : { i // 0 < i }) → Step
 | unsigned  : {h : f.module.memaddrs.length > 0}
@@ -506,7 +508,7 @@ inductive Integer : Step
           → {_ : m = s.mems.get a}
           → {_ : ea = i.toNat + arg.offset.toNat}
           → {_ : ea + nBytes ≤ m.data.length}
-          → {_ : b = (m.data.list.drop ea).take nBytes}
+          → {_ : b = ((m.data.list.drop ea).take nBytes)}
           → {_ : b = Unsigned.toBytes nn.toBits c}
           → Integer (s, (f, @mem_int nn (.load arg) :: @const .double i :: is))
                     (s, (f, @const nn c :: is))
@@ -537,10 +539,12 @@ inductive Integer : Step
           → {_ : ea = i.toNat + arg.offset.toNat}
           → {_ : ea + nBytes ≤ m.data.length}
           → {_ : b = Unsigned.toBytes nn.toBits c}
+          → {_ : m' = Instance.Memory.write m b ea}
+        --   → {_ : s' = }
           → Integer (s, (f, @mem_int nn (.store arg) :: @const nn c :: @const .double i :: is))
                     (s, (f, @const nn c :: is))
 -- todo more
-
+-/
 
 end Memory
 
