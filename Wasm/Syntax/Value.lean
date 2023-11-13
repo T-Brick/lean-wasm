@@ -1,7 +1,6 @@
 /- Encoding of defintion WASM's value defintion:
     https://webassembly.github.io/spec/core/syntax/values.html
 -/
-import Mathlib
 import Wasm.Util
 
 namespace Wasm.Syntax.Value
@@ -15,8 +14,8 @@ namespace Unsigned
 def ofNat (u : Nat) : Unsigned n := Fin.ofNat' u zero_lt_two_pow
 def toNat (u : Unsigned n) : Nat := u.val
 
-def MAX_VALUE   : Unsigned n  := ofNat (2 ^ n - 1)
-def MIN_VALUE   : Unsigned n  := ofNat 0
+def MAX_VALUE : Unsigned n := ofNat (2 ^ n - 1)
+def MIN_VALUE : Unsigned n := ofNat 0
 def MAX (n : { i // 0 < i }) : Nat := 2 ^ n.val
 def MIN (_ : { i // 0 < i }) : Nat := 0
 
@@ -72,7 +71,7 @@ def MIN_VALUE : Signed n  := ofUnsignedN <| .ofNat (2^(n - 1))
 def toInt (i : Signed n) : Int :=
   if i.toUnsignedN < MIN_VALUE.toUnsignedN
   then i.toUnsignedN.toNat -- i pos
-  else i.toUnsignedN.toInt - 2 ^ (n.val)
+  else i.toUnsignedN.toInt - Int.ofNat (2 ^ n.val)
 
 def ofInt? (i : Int) : Option (Signed n) :=
   let offset := i + (2 ^ (n - 1) : Nat)
@@ -135,18 +134,18 @@ instance : LE  (Signed n)  := leOfOrd
 
 end Signed
 
-@[inline] def Unsigned8     := Unsigned ⟨8, by simp⟩
-@[inline] def Unsigned16    := Unsigned ⟨16, by simp⟩
-@[inline] def Unsigned32    := Unsigned ⟨32, by simp⟩
-@[inline] def Unsigned64    := Unsigned ⟨64, by simp⟩
-@[inline] def Signed8       := Signed ⟨8, by simp⟩
-@[inline] def Signed16      := Signed ⟨16, by simp⟩
-@[inline] def Signed32      := Signed ⟨32, by simp⟩
-@[inline] def Signed64      := Signed ⟨64, by simp⟩
+@[reducible] def Unsigned8     := Unsigned ⟨8, by simp⟩
+@[reducible] def Unsigned16    := Unsigned ⟨16, by simp⟩
+@[reducible] def Unsigned32    := Unsigned ⟨32, by simp⟩
+@[reducible] def Unsigned64    := Unsigned ⟨64, by simp⟩
+@[reducible] def Signed8       := Signed ⟨8, by simp⟩
+@[reducible] def Signed16      := Signed ⟨16, by simp⟩
+@[reducible] def Signed32      := Signed ⟨32, by simp⟩
+@[reducible] def Signed64      := Signed ⟨64, by simp⟩
 
 instance : ToString Unsigned32 := ⟨Unsigned.toString⟩
 
-@[inline] def Uninterpreted := Unsigned -- 'iN' in the reference
+@[reducible] def Uninterpreted := Unsigned -- 'iN' in the reference
 
 -- TODO: actually do floating point
 def FloatN (n : Nat) := Float

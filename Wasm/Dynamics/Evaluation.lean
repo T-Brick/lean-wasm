@@ -1,20 +1,10 @@
 import Wasm.Util
-import Wasm.Dynamics.Address
-import Wasm.Dynamics.Value
-import Wasm.Dynamics.Instance
-import Wasm.Dynamics.Stack
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Value
-import Wasm.Syntax.Module
-import Wasm.Syntax.Index
 import Wasm.Syntax.Value
 
 namespace Wasm.Dynamics.Evaluation
 
 namespace Numeric
 
-open Syntax
-open Syntax.Instr.Numeric
 open Syntax.Value
 
 namespace Unsigned
