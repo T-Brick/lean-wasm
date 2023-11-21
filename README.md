@@ -7,6 +7,18 @@ also written in Lean. Hence, efforts here will mostly reflect parts of WASM that
 are useful there (i.e. Vector and Float related instructions may lag behind
 the rest of the project).
 
+## Project Organisation/Structure
+
+Files are generally organised into a similar layout as defined by the WASM spec:
+- [Syntax](Wasm/Syntax/) corresponds to [Structure](https://webassembly.github.io/spec/core/syntax/index.html)
+- [Validation](Wasm/Validation/) corresponds to [Validation](https://webassembly.github.io/spec/core/valid/index.html)
+- [Dynamics](Wasm/Dynamics/) corresponds to [Execution](https://webassembly.github.io/spec/core/exec/index.html)
+- [Binary](Wasm/Binary/) corresponds to [Binary Format](https://webassembly.github.io/spec/core/binary/index.html)
+- [Text](Wasm/Text/) corresponds to [Text Format](https://webassembly.github.io/spec/core/text/index.html)
+
+The most notably deviation to this is that the WASM definition of integers is
+defined in the [Numbers](https://github.com/T-Brick/Numbers) library.
+
 ## Progress/Todo
 
 - [ ] Syntax/Structure
