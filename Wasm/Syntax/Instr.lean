@@ -6,6 +6,8 @@ import Wasm.Syntax.Opcode
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
 import Wasm.Syntax.Index
+import Numbers
+open Numbers
 
 inductive Wasm.Syntax.Typ.BlockType
 | index : Module.Index.Typ → BlockType
@@ -87,7 +89,7 @@ inductive Integer.Relation
 | ge : Sign → Integer.Relation
 
 inductive Integer : (nn : Numeric.Size) → Type
-| const         : (v : Value.Unsigned nn.toBits) → Integer nn
+| const         : (v : Unsigned nn.toBits) → Integer nn
 | unop          : Integer.Unop → Integer nn
 | binop         : Integer.Binop → Integer nn
 | test          : Integer.Test → Integer nn
@@ -173,8 +175,8 @@ inductive Table
 namespace Memory
 
 structure Arg where
-  offset : Value.Unsigned32
-  align  : Value.Unsigned32
+  offset : Unsigned32
+  align  : Unsigned32
 
 inductive Integer : (nn : Numeric.Size) → Type
 | load    : Arg → Integer nn

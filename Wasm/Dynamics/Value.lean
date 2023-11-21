@@ -3,6 +3,8 @@ import Wasm.Syntax.Instr
 import Wasm.Syntax.Typ
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Instr
+import Numbers
+open Numbers
 
 namespace Wasm.Dynamics
 
@@ -11,7 +13,7 @@ open Syntax.Instr
 
 inductive Value.Numeric
 | int_const   : (nn : Numeric.Size)
-              → {v : Value.Unsigned (Numeric.Size.toBits nn)}
+              → {v : Unsigned (Numeric.Size.toBits nn)}
               → {i : Instr.Dynamic // i = .real (.numeric (.integer (.const v)))}
               → Value.Numeric
 | float_const : (nn : Numeric.Size)

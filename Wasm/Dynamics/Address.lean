@@ -1,8 +1,9 @@
 import Wasm.Syntax.Value
+import Numbers
 
 namespace Wasm.Dynamics
 
-def Address := Syntax.Value.Unsigned32
+def Address := Unsigned32
 
 namespace Address
 

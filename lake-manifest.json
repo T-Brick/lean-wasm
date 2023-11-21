@@ -10,6 +10,14 @@
     "inputRev?": "v4.3.0-rc1",
     "inherited": false}},
   {"git":
+   {"url": "https://github.com/T-Brick/Numbers",
+    "subDir?": null,
+    "rev": "0959892835a6218ffd939e8110cda97ffe7b1e66",
+    "opts": {},
+    "name": "numbers",
+    "inputRev?": "main",
+    "inherited": false}},
+  {"git":
    {"url": "https://github.com/leanprover/std4",
     "subDir?": null,
     "rev": "a71c160b1934814837d37f377efaf2964e55c433",

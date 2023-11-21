@@ -1,4 +1,5 @@
 import Wasm.Util
+import Numbers
 
 import Wasm.Syntax.Opcode
 import Wasm.Syntax.Index

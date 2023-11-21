@@ -3,35 +3,37 @@
 -/
 
 import Wasm.Syntax.Value
+import Numbers
+open Numbers
 
 namespace Wasm.Syntax.Module.Index
 
-@[inline] def Typ       := Value.Unsigned32
-@[inline] def Function  := Value.Unsigned32
-@[inline] def Table     := Value.Unsigned32
-@[inline] def Memory    := Value.Unsigned32
-@[inline] def Global    := Value.Unsigned32
-@[inline] def Element   := Value.Unsigned32
-@[inline] def Data      := Value.Unsigned32
-@[inline] def Local     := Value.Unsigned32
-@[inline] def Label     := Value.Unsigned32
+abbrev Typ       := Unsigned32
+abbrev Function  := Unsigned32
+abbrev Table     := Unsigned32
+abbrev Memory    := Unsigned32
+abbrev Global    := Unsigned32
+abbrev Element   := Unsigned32
+abbrev Data      := Unsigned32
+abbrev Local     := Unsigned32
+abbrev Label     := Unsigned32
 
-instance : DecidableEq Typ      := Value.Unsigned.deq
-instance : DecidableEq Function := Value.Unsigned.deq
-instance : DecidableEq Table    := Value.Unsigned.deq
-instance : DecidableEq Memory   := Value.Unsigned.deq
-instance : DecidableEq Global   := Value.Unsigned.deq
-instance : DecidableEq Element  := Value.Unsigned.deq
-instance : DecidableEq Data     := Value.Unsigned.deq
-instance : DecidableEq Local    := Value.Unsigned.deq
-instance : DecidableEq Label    := Value.Unsigned.deq
+-- instance : DecidableEq Typ      := Unsigned.deq
+-- instance : DecidableEq Function := Unsigned.deq
+-- instance : DecidableEq Table    := Unsigned.deq
+-- instance : DecidableEq Memory   := Unsigned.deq
+-- instance : DecidableEq Global   := Unsigned.deq
+-- instance : DecidableEq Element  := Unsigned.deq
+-- instance : DecidableEq Data     := Unsigned.deq
+-- instance : DecidableEq Local    := Unsigned.deq
+-- instance : DecidableEq Label    := Unsigned.deq
 
-instance : ToString Typ      := ⟨Value.Unsigned.toString⟩
-instance : ToString Function := ⟨Value.Unsigned.toString⟩
-instance : ToString Table    := ⟨Value.Unsigned.toString⟩
-instance : ToString Memory   := ⟨Value.Unsigned.toString⟩
-instance : ToString Global   := ⟨Value.Unsigned.toString⟩
-instance : ToString Element  := ⟨Value.Unsigned.toString⟩
-instance : ToString Data     := ⟨Value.Unsigned.toString⟩
-instance : ToString Local    := ⟨Value.Unsigned.toString⟩
-instance : ToString Label    := ⟨Value.Unsigned.toString⟩
+-- instance : ToString Typ      := ⟨Unsigned.toString⟩
+-- instance : ToString Function := ⟨Unsigned.toString⟩
+-- instance : ToString Table    := ⟨Unsigned.toString⟩
+-- instance : ToString Memory   := ⟨Unsigned.toString⟩
+-- instance : ToString Global   := ⟨Unsigned.toString⟩
+-- instance : ToString Element  := ⟨Unsigned.toString⟩
+-- instance : ToString Data     := ⟨Unsigned.toString⟩
+-- instance : ToString Local    := ⟨Unsigned.toString⟩
+-- instance : ToString Label    := ⟨Unsigned.toString⟩

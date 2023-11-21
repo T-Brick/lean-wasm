@@ -9,6 +9,8 @@ import Wasm.Dynamics.Instr
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
 import Wasm.Syntax.Instr
+import Numbers
+open Numbers
 
 namespace Wasm.Dynamics
 
@@ -24,7 +26,7 @@ def int {nn : Numeric.Size}
         : Dynamics.Instr.Dynamic :=
   .real (.numeric ((.integer instr) : (Syntax.Instr.Numeric nn)))
 
-def const {nn : Numeric.Size} (v : Syntax.Value.Unsigned nn.toBits) :=
+def const {nn : Numeric.Size} (v : Unsigned nn.toBits) :=
   int (.const v)
 
 namespace Step.Numeric.Integer
@@ -557,14 +559,14 @@ inductive Instr : Step
 | drop      : IsValue val _
             → Instr (s, (f, .real .drop :: val :: is))
                     (s, (f, is))
-| select_t  : {c : Syntax.Value.Unsigned (Numeric.Size.toBits .double)}
+| select_t  : {c : Unsigned (Numeric.Size.toBits .double)}
             → {_ : IsValue val₁ v₁}
             → {_ : IsValue val₂ v₂}
             → {_ : Value.type v₁ = Value.type v₂}
             → {_ : c ≠ 0}
             → Instr (s, (f, .real (.select t) :: const c :: val₂ :: val₁ :: is))
                     (s, (f, val₁ :: is))
-| select_f  : {c : Syntax.Value.Unsigned (Numeric.Size.toBits .double)}
+| select_f  : {c : Unsigned (Numeric.Size.toBits .double)}
             → {_ : IsValue val₁ v₁}
             → {_ : IsValue val₂ v₂}
             → {_ : Value.type v₁ = Value.type v₂}
