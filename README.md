@@ -69,4 +69,10 @@ defined in the [Numbers](https://github.com/T-Brick/Numbers) library.
   - [ ] Intepreter
 - [ ] Formats
   - [ ] Binary
-  - [ ] Text (WAT)
+    - [ ] Parsing
+    - [ ] Printing
+    - [ ] Validation
+  - [ ] Text
+    - [ ] Parsing
+    - [x] Printing
+    - [ ] Validation
