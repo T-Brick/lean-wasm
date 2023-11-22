@@ -8,10 +8,6 @@ import Wasm.Syntax.Index
 import Numbers
 open Numbers
 
-inductive Wasm.Syntax.Typ.BlockType
-| index : Module.Index.Typ → BlockType
-| value : Option Typ.Val → BlockType
-
 namespace Wasm.Syntax.Instr
 
 namespace Numeric
@@ -200,6 +196,10 @@ inductive Memory
 
 end Instr
 
+inductive Instr.BlockType
+| index : Module.Index.Typ → BlockType
+| value : Option Typ.Val → BlockType
+
 inductive Instr.Pseudo
 | wasm_end
 | wasm_else
@@ -218,9 +218,9 @@ inductive Instr : Type
 -- Control
 | nop
 | unreachable
-| block         : Typ.BlockType → List Instr → (wasm_end : Instr.Pseudo) → Instr
-| loop          : Typ.BlockType → List Instr → (wasm_end : Instr.Pseudo) → Instr
-| wasm_if       : Typ.BlockType → List Instr → (wasm_else : Instr.Pseudo)
+| block         : Instr.BlockType → List Instr → (wasm_end : Instr.Pseudo) → Instr
+| loop          : Instr.BlockType → List Instr → (wasm_end : Instr.Pseudo) → Instr
+| wasm_if       : Instr.BlockType → List Instr → (wasm_else : Instr.Pseudo)
                 → List Instr → (wasm_end : Instr.Pseudo) → Instr
 | br            : Module.Index.Label → Instr
 | br_if         : Module.Index.Label → Instr

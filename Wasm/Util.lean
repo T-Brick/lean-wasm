@@ -15,6 +15,7 @@ def Vec.max_length : Nat := Nat.pow 2 32
 structure Vec (α : Type u) where
   list : List α
   maxLen : list.length < Vec.max_length
+deriving DecidableEq
 
 namespace Vec
 
@@ -22,6 +23,7 @@ nonrec def toString [ToString α] (v : Vec α) : String :=
   String.concatWith " " v.list
 
 def nil : Vec α := ⟨[], by simp⟩
+def single : α → Vec α := (⟨[·], by simp⟩)
 
 instance : Coe (Vec α) (List α)          := ⟨fun v => v.list⟩
 instance : Inhabited (Vec α)             := ⟨nil⟩
@@ -50,7 +52,8 @@ def append (xs : Vec α) (ys : Vec α)
            : Vec α :=
   length_append xs ys h |>.fst
 
-def map (f : α → β) (v : Vec α) : Vec β := ⟨v.list.map f, by
+def map (f : α → β) (v : Vec α) : Vec β :=
+  ⟨v.list.map f, by
     rw [List.length_map]
     exact v.maxLen
   ⟩

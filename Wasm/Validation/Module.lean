@@ -20,7 +20,7 @@ open Statics
 inductive Function : (Γ : Context) → Function → Typ.Func → Prop
 | function : {h : t1.length + t.list.length < Vec.max_length}
            → Γ.types.list.get x = ⟨t1, t2⟩
-           → Expr {Γ with locals := Vec.append ⟨t1, by apply lt_left_add h⟩ t h
+           → Expr {Γ with locals := Vec.append t1 t h
                         , labels := ⟨[t2], by simp⟩
                         , wasm_return := .some t2
                         } expr t2
@@ -34,14 +34,14 @@ inductive Memory : (Γ : Context) → Memory → Syntax.Typ.Mem → Prop
 
 inductive Global : (Γ : Context) → Global → Syntax.Typ.Global → Prop
 | globl : Validation.Typ.Global ⟨m, t⟩
-        → Expr Γ expr [t]
+        → Statics.Expr Γ expr (Vec.single t)
         → Expr.Constant Γ expr
         → Global Γ ⟨⟨m, t⟩, expr⟩ ⟨m, t⟩
 
 inductive Element.Mode : (Γ : Context) → Element.Mode → Syntax.Typ.Ref → Prop
 | passive     : Mode Γ .passive t
 | active      : Γ.tables.list.get x = ⟨limits, t⟩
-              → Expr Γ expr [.num .i32]
+              → Statics.Expr Γ expr (Vec.single (.num .i32))
               → Expr.Constant Γ expr
               → Mode Γ (.active (Vec.index Γ.tables x) expr) t
 | declarative : Mode Γ .declarative t
@@ -50,7 +50,7 @@ inductive Element : (Γ : Context) → Element → Syntax.Typ.Ref → Prop
 | nil  : Element.Mode Γ mode t
        → Element Γ ⟨t, Vec.nil, mode⟩ t
 | cons : {h : List.length exprs.list + 1 < Vec.max_length}
-       → Expr Γ expr [.ref t]
+       → Statics.Expr Γ expr (Vec.single (.ref t))
        → Expr.Constant Γ expr
        → Element Γ ⟨t, exprs, mode⟩ t
        → Element Γ ⟨t, Vec.cons expr exprs h, mode⟩ t
@@ -58,7 +58,7 @@ inductive Element : (Γ : Context) → Element → Syntax.Typ.Ref → Prop
 inductive Data.Mode : (Γ : Context) → Data.Mode → Prop
 | passive : Mode Γ .passive
 | active  : Γ.mems.list.get x = limits
-          → Expr Γ expr [.num .i32]
+          → Statics.Expr Γ expr (Vec.single (.num .i32))
           → Expr.Constant Γ expr
           → Mode Γ (.active (Vec.index Γ.mems x) expr)
 
@@ -66,7 +66,7 @@ inductive Data : (Γ : Context) → Data → Prop
 | data : Data.Mode Γ mode → Data Γ ⟨b, mode⟩
 
 inductive Start : (Γ : Context) → Start → Prop
-| start : Γ.funcs.list.get x = ⟨[],[]⟩ → Start Γ ⟨Vec.index Γ.funcs x⟩
+| start : Γ.funcs.list.get x = ⟨Vec.nil,Vec.nil⟩ → Start Γ ⟨Vec.index Γ.funcs x⟩
 
 inductive Export.Description : (Γ : Context) → Export.Description → Typ.Extern → Prop
 | func  : Γ.funcs.list.get x = type

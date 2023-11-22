@@ -195,39 +195,39 @@ inductive Instr : (Γ : Context) → Instr → Typ.Stack → Prop
 | unreachable   : Instr Γ .unreachable ⟨t1, t2⟩
 | block         : {h : List.length Γ.labels.list + 1 < Vec.max_length}
                 → Typ.Block Γ blocktype ⟨t1, t2⟩
-                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs ⟨t1.map .val, t2.map .val⟩
-                → Instr Γ (.block blocktype instrs .wasm_end) ⟨t1.map .val, t2.map .val⟩
+                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs ⟨t1.list.map .val, t2.list.map .val⟩
+                → Instr Γ (.block blocktype instrs .wasm_end) ⟨t1.list.map .val, t2.list.map .val⟩
 | loop          : {h : List.length Γ.labels.list + 1 < Vec.max_length}
                 → Typ.Block Γ blocktype ⟨t1, t2⟩
-                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs ⟨t1.map .val, t2.map .val⟩
-                → Instr Γ (.block blocktype instrs .wasm_end) ⟨t1.map .val, t2.map .val⟩
+                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs ⟨t1.list.map .val, t2.list.map .val⟩
+                → Instr Γ (.block blocktype instrs .wasm_end) ⟨t1.list.map .val, t2.list.map .val⟩
 | wasm_if       : {h : List.length Γ.labels.list + 1 < Vec.max_length}
                 → Typ.Block Γ blocktype ⟨t1, t2⟩
-                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs1 ⟨t1.map .val, t2.map .val⟩
-                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs2 ⟨t1.map .val, t2.map .val⟩
+                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs1 ⟨t1.list.map .val, t2.list.map .val⟩
+                → Instrs {Γ with labels := Vec.cons t2 Γ.labels h} instrs2 ⟨t1.list.map .val, t2.list.map .val⟩
                 → Instr Γ (.wasm_if blocktype instrs1 .wasm_else instrs2 .wasm_end)
-                    ⟨t1.map .val |>.append [i32], t2.map .val⟩
+                    ⟨t1.list.map .val |>.append [i32], t2.list.map .val⟩
 | br            : Γ.labels.list.get l = t
-                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨List.append t1 (t.map .val), t2⟩
+                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨List.append t1 (t.list.map .val), t2⟩
 | br_if         : Γ.labels.list.get l = t
-                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨(t.map .val).append [i32], t2⟩
-| br_table_nil  : Typ.MatchList t (Γ.labels.list.get ln |>.map .val)
+                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨(t.list.map .val).append [i32], t2⟩
+| br_table_nil  : Typ.MatchList t (Γ.labels.list.get ln |>.list.map .val)
                 → Instr Γ (.br_table Vec.nil (Vec.index Γ.labels ln))
                     ⟨List.append t1 t |>.append [i32], t2⟩
 | br_table_cons : {h : List.length ls.list + 1 < Vec.max_length}
-                → Typ.MatchList t (Γ.labels.list.get l |>.map .val)
+                → Typ.MatchList t (Γ.labels.list.get l |>.list.map .val)
                 → Instr Γ (.br_table ls ln)
                     ⟨List.append t1 t |>.append [i32], t2⟩
                 → Instr Γ (.br_table (Vec.cons (Vec.index Γ.labels l) ls h) ln)
                     ⟨List.append t1 t |>.append [i32], t2⟩
 | wasm_return   : Γ.labels.list.get l = t
-                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨List.append t1 (t.map .val), t2⟩
+                → Instr Γ (.br (Vec.index Γ.labels l)) ⟨List.append t1 (t.list.map .val), t2⟩
 | call          : Γ.funcs.list.get x = ⟨t1, t2⟩
-                → Instr Γ (.call (Vec.index Γ.funcs x)) ⟨t1.map .val, t2.map .val⟩
+                → Instr Γ (.call (Vec.index Γ.funcs x)) ⟨t1.list.map .val, t2.list.map .val⟩
 | call_indirect : Γ.tables.list.get x = ⟨limits, fref⟩
                 → Γ.types.list.get y = ⟨t1, t2⟩
                 → Instr Γ (.call_indirect (Vec.index Γ.tables x) (Vec.index Γ.types y))
-                    ⟨t1.map .val |>.append [i32], t2.map .val⟩
+                    ⟨t1.list.map .val |>.append [i32], t2.list.map .val⟩
 
 inductive Instrs : (Γ : Context) → List Instr → Typ.Stack → Prop
 | nil  : Instrs Γ [] ⟨t1, t2⟩
@@ -237,8 +237,8 @@ inductive Instrs : (Γ : Context) → List Instr → Typ.Stack → Prop
        → Instrs Γ (instr :: instrs) ⟨t1, t3⟩
 end
 
-inductive Expr : (Γ : Context) → Syntax.Expr →  Syntax.Typ.Result → Prop
-| expr : Statics.Instrs Γ instrs ⟨[], t'⟩ → Statics.Typ.MatchList t' (t.map .val) → Expr Γ (instrs, .wasm_end) t
+inductive Expr : (Γ : Context) → Syntax.Expr → Syntax.Typ.Result → Prop
+| expr : Statics.Instrs Γ instrs ⟨[], t'⟩ → Statics.Typ.MatchList t' (t.list.map .val) → Expr Γ (instrs, .wasm_end) t
 
 inductive Instr.Constant : (Γ : Context) → Syntax.Instr → Prop
 | const_int   : Constant Γ (.numeric (.integer (.const v)))
@@ -250,4 +250,3 @@ inductive Instr.Constant : (Γ : Context) → Syntax.Instr → Prop
 inductive Expr.Constant : (Γ : Context) → Syntax.Expr → Prop
 | nil  : Constant Γ ([], .wasm_end)
 | cons : Constant Γ (instrs, .wasm_end) → Constant Γ (instr :: instrs, .wasm_end)
-

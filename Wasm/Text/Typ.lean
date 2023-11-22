@@ -3,6 +3,7 @@
 -/
 import Wasm.Util
 import Wasm.Syntax.Typ
+import Wasm.Text.Context
 
 namespace Wasm.Syntax.Typ
 
@@ -28,12 +29,6 @@ def Val.toString : Val → String
   | .ref v => v.toString
 instance : ToString Val := ⟨Val.toString⟩
 
-nonrec def Func.toString (func : Func) : String :=
-  let args := String.concatWith " " (func.args.map (fun a => s!"(param {a})"))
-  let res  := String.concatWith " " (func.result.map (fun r => s!"(result {r})"))
-  s!"(func ({args}) ({res}))"
-instance : ToString Func := ⟨Func.toString⟩
-
 def Limit.toString (lim : Limit) : String :=
   match lim.max with
   | .none => s!"{lim.min}"
@@ -50,4 +45,40 @@ nonrec def Global.toString (glb : Global) : String :=
   | .var   => s!"(mut {v})"
 instance : ToString Global := ⟨Global.toString⟩
 
--- todo Extern
+end Syntax.Typ
+
+namespace Text.Typ
+
+-- For some reason the text section defines a heaptype, which is the same as
+--    as a reftype.
+def Heap := Syntax.Typ.Ref
+instance : ToString Heap := ⟨Syntax.Typ.Ref.toString⟩
+
+
+def Param := Option Ident × Syntax.Typ.Val
+def Param.toString : Param → String
+  | (.some id, v) => s!"(param {id} {v})"
+  | (.none, v)    => s!"(param {v})"
+instance : Coe Syntax.Typ.Result (Vec Param) := ⟨(·.map ((.none, ·)))⟩
+
+instance : ToString Param := ⟨Param.toString⟩
+instance : ToString (List Param) := ⟨String.concatWith " "⟩
+instance : ToString (Vec Param) := ⟨String.concatWith " " ∘ Vec.list⟩
+
+
+def Result := Syntax.Typ.Val
+instance : Coe Syntax.Typ.Result (Vec Result) := ⟨(·)⟩
+
+instance : ToString Result := ⟨fun v => v.toString⟩
+instance : ToString (List Result) := ⟨String.concatWith " "⟩
+instance : ToString (Vec Result) := ⟨String.concatWith " " ∘ Vec.list⟩
+
+
+structure Func where
+  args   : Vec Param
+  result : Vec Result
+instance : Coe Syntax.Typ.Func Func := ⟨fun f => ⟨f.args, f.result⟩⟩
+
+instance : ToString Func := ⟨fun f => s!"(func {f.args} {f.result})"⟩
+instance : ToString Syntax.Typ.Func :=
+  ⟨(fun f => toString (Func.mk f.args f.result))⟩

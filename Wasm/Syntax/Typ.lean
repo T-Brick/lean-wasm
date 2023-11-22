@@ -11,23 +11,30 @@ inductive Num
 | i64
 | f32
 | f64
+deriving DecidableEq, Inhabited
 
 inductive Vec
 | v128
+deriving DecidableEq, Inhabited
 
 inductive Ref
 | func
 | extern
+deriving DecidableEq, Inhabited
 
 inductive Val
 | num : Num → Val
 | vec : Vec → Val
 | ref : Ref → Val
+deriving DecidableEq, Inhabited
 
-@[inline] def Result := List Val
+@[inline] def Result := Wasm.Vec Val
+deriving DecidableEq, Inhabited
+
 structure Func where
   args   : Result
   result : Result
+deriving DecidableEq, Inhabited
 
 structure Limit where
   min : UInt32 -- number of page sizes

@@ -18,10 +18,10 @@ inductive Block.Index (Γ : Context) : Module.Index.Typ → Syntax.Typ.Func → 
 | typeIndex : Γ.types.list.get i = f → Block.Index Γ (Vec.index Γ.types i) f
 
 inductive Block.ValType (Γ : Context) : Option Typ.Val → Syntax.Typ.Func → Prop
-| valTypeEmpty : Block.ValType Γ .none ⟨[], []⟩
-| valTypeValue : Block.ValType Γ (.some v) ⟨[], [v]⟩
+| valTypeEmpty : Block.ValType Γ .none ⟨Vec.nil, Vec.nil⟩
+| valTypeValue : Block.ValType Γ (.some v) ⟨Vec.nil, Vec.single v⟩
 
-inductive Block (Γ : Context) : Syntax.Typ.BlockType → Syntax.Typ.Func → Prop
+inductive Block (Γ : Context) : Syntax.Instr.BlockType → Syntax.Typ.Func → Prop
 | index : Block.Index Γ index type → Block Γ (.index index) type
 | value : Block.ValType Γ valtype type → Block Γ (.value valtype) type
 
