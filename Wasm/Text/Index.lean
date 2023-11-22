@@ -80,8 +80,10 @@ end Index
 inductive Typeuse
 | type_ind : Index.Typ → Typeuse
 | param_res : Index.Typ → List Typ.Param → List Typ.Result → Typeuse
+| elab_param_res : List Typ.Param → List Typ.Result → Typeuse
 
 def Typeuse.toString : Typeuse → String
-  | type_ind x => s!"(type {x})"
-  | param_res x params res => s!"(type {x} {params} {res})"
+  | .type_ind x => s!"(type {x})"
+  | .param_res x params res => s!"(type {x} {params} {res})"
+  | .elab_param_res params res => s!"{params} {res}"
 instance : ToString Typeuse := ⟨Typeuse.toString⟩
