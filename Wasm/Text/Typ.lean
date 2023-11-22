@@ -69,7 +69,7 @@ instance : ToString (Vec Param) := ⟨String.concatWith " " ∘ Vec.list⟩
 def Result := Syntax.Typ.Val
 instance : Coe Syntax.Typ.Result (Vec Result) := ⟨(·)⟩
 
-instance : ToString Result := ⟨fun v => v.toString⟩
+instance : ToString Result := ⟨(s!"(result {·.toString})")⟩
 instance : ToString (List Result) := ⟨String.concatWith " "⟩
 instance : ToString (Vec Result) := ⟨String.concatWith " " ∘ Vec.list⟩
 
