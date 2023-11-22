@@ -3,6 +3,8 @@ import Wasm.Syntax.Typ
 
 namespace Wasm.Text
 
+@[reducible] def Name := String
+
 def Ident.validChar (c : Char) : Bool :=
   c.isAlphanum || "!#$%'*+-./:<=>?@\\^_`|~".any (· = c)
 
@@ -12,6 +14,7 @@ structure Ident where
   name_valid_chars : name.all Ident.validChar
 deriving DecidableEq
 instance : ToString Ident := ⟨(s!"${·.name}")⟩
+instance : ToString (Option Ident) := ⟨(·.map toString |>.getD "")⟩
 
 namespace Ident
 structure Context where

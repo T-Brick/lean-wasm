@@ -77,14 +77,11 @@ instance : Coe (Vec Syntax.Module.Index.Label)    (Vec Label)     := ⟨(·.map 
 
 end Index
 
--- todo add other forms
--- inductive Typeuse : (I : Ident.Context) → Index.Typ I → Ident.Context → Type
--- | no_param_res
-    -- : (x : Index.Typ I)
-    -- → (I.typedefs.get? (x.toNat (·.types.indexOf ∘ .some)) = .some ⟨args, res⟩)
-    -- → Typeuse I x { Ident.Context.empty with locals := args.list.map (fun _ => .none) }
--- | 
+inductive Typeuse
+| type_ind : Index.Typ → Typeuse
+| param_res : Index.Typ → List Typ.Param → List Typ.Result → Typeuse
 
--- def Typeuse (I : Ident.Context) := List Typ.Param × List Typ.Result
-
--- instance : ToString (Typeuse I) := ⟨fun (ps, rs) => s!"{ps} {rs}"⟩
+def Typeuse.toString : Typeuse → String
+  | type_ind x => s!"(type {x})"
+  | param_res x params res => s!"(type {x} {params} {res})"
+instance : ToString Typeuse := ⟨Typeuse.toString⟩

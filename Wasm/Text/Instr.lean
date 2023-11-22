@@ -433,7 +433,11 @@ instance : ToString Syntax.Instr        := ⟨(Instr.toString ·)⟩
 instance : ToString (List Instr)        := ⟨Instr.listToString⟩
 instance : ToString (List Syntax.Instr) := ⟨(Instr.listToString ·)⟩
 
-end Wasm.Text.Instr
+end Instr
+
+@[reducible] def Expr := List Instr
+
+end Wasm.Text
 
 namespace Wasm.Syntax.Instr
 

@@ -30,4 +30,6 @@ import Wasm.Binary.Typ
 
 /- WASM Text Representation (WAT) -/
 import Wasm.Text.Typ
+import Wasm.Text.Index
 import Wasm.Text.Instr
+import Wasm.Text.Module
