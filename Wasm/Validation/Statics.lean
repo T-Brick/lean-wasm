@@ -134,13 +134,13 @@ inductive Memory.Integer.Instr (Γ : Context) : Instr.Memory.Integer nn → Typ.
           → Instr Γ (.load32 s arg) ⟨[i32], [toIntOpd nn]⟩
 | store8  : Γ.mems.list.length > 0
           → Nat.pow 2 arg.align.val ≤ 1
-          → Instr Γ (.store8 s arg) ⟨[i32, toIntOpd nn], []⟩
+          → Instr Γ (.store8 arg) ⟨[i32, toIntOpd nn], []⟩
 | store16 : Γ.mems.list.length > 0
           → Nat.pow 2 arg.align.val ≤ 2
-          → Instr Γ (.store16 s arg) ⟨[i32, toIntOpd nn], []⟩
+          → Instr Γ (.store16 arg) ⟨[i32, toIntOpd nn], []⟩
 | store32 : Γ.mems.list.length > 0
           → Nat.pow 2 arg.align.val ≤ 4
-          → Instr Γ (.store32 s arg) ⟨[i32, toIntOpd nn], []⟩
+          → Instr Γ (.store32 arg) ⟨[i32, toIntOpd nn], []⟩
 
 inductive Memory.Float.Instr (Γ : Context) : Instr.Memory.Float nn → Typ.Stack → Prop
 | load    : Γ.mems.list.length > 0

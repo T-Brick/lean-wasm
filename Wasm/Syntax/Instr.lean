@@ -169,9 +169,9 @@ inductive Integer : (nn : Numeric.Size) → Type
 | load8   : Numeric.Sign → Arg → Integer nn
 | load16  : Numeric.Sign → Arg → Integer nn
 | load32  : Numeric.Sign → Arg → Integer .quad
-| store8  : Numeric.Sign → Arg → Integer nn
-| store16 : Numeric.Sign → Arg → Integer nn
-| store32 : Numeric.Sign → Arg → Integer .quad
+| store8  : Arg → Integer nn
+| store16 : Arg → Integer nn
+| store32 : Arg → Integer .quad
 
 
 inductive Float : (nn : Numeric.Size) → Type

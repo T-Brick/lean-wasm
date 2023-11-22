@@ -346,9 +346,9 @@ def Integer.toString : Syntax.Instr.Memory.Integer nn → String
   | .load8 s m   => s!"i{nn}.load8_{s} {m}"
   | .load16 s m  => s!"i{nn}.load16_{s} {m}"
   | .load32 s m  => s!"i{nn}.load32_{s} {m}"
-  | .store8 s m  => s!"i{nn}.store8_{s} {m}"
-  | .store16 s m => s!"i{nn}.store16_{s} {m}"
-  | .store32 s m => s!"i{nn}.store32_{s} {m}"
+  | .store8 m  => s!"i{nn}.store8 {m}"
+  | .store16 m => s!"i{nn}.store16 {m}"
+  | .store32 m => s!"i{nn}.store32 {m}"
 instance : ToString (Syntax.Instr.Memory.Integer nn) := ⟨Integer.toString⟩
 
 
