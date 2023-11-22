@@ -3,7 +3,8 @@ import Wasm.Syntax.Typ
 
 namespace Wasm.Text
 
-@[reducible] def Name := String
+def Name := String
+instance : ToString Name := ⟨fun name => s!"\"{show String from name}\""⟩
 
 def Ident.validChar (c : Char) : Bool :=
   c.isAlphanum || "!#$%'*+-./:<=>?@\\^_`|~".any (· = c)
