@@ -108,12 +108,12 @@ inductive Instr.Plain
 
 
 inductive Instr.BlockType
-| value : (t : Option Typ.Result) → BlockType
-| index : Module.Typeuse → BlockType
+| value   : (t : Option Typ.Result) → BlockType
+| typeuse : Module.Typeuse → BlockType
 
 instance : Coe (Syntax.Instr.BlockType) Instr.BlockType :=
-  ⟨ fun | .index i => .index (.type_ind i)
-        | .value .none => .value .none
+  ⟨ fun | .index i         => .typeuse (.type_ind i)
+        | .value .none     => .value .none
         | .value (.some v) => .value (.some v)
   ⟩
 
@@ -396,7 +396,7 @@ instance : ToString Instr.Plain := ⟨Plain.toString⟩
 def BlockType.toString : BlockType → String
   | .value .none     => ""
   | .value (.some x) => x.toString
-  | .index i => s!"(type {i})"
+  | .typeuse tu      => tu.toString
 instance : ToString BlockType := ⟨BlockType.toString⟩
 
 mutual
