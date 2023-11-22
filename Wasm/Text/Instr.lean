@@ -109,10 +109,10 @@ inductive Instr.Plain
 
 inductive Instr.BlockType
 | value : (t : Option Typ.Result) → BlockType
-| index : Index.Typ → BlockType
+| index : Module.Typeuse → BlockType
 
 instance : Coe (Syntax.Instr.BlockType) Instr.BlockType :=
-  ⟨ fun | .index i => .index i
+  ⟨ fun | .index i => .index (.type_ind i)
         | .value .none => .value .none
         | .value (.some v) => .value (.some v)
   ⟩

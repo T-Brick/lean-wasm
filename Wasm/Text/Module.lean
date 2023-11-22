@@ -112,7 +112,7 @@ instance : ToString (List Local) := ⟨String.intercalate " " ∘ List.map toStr
 
 def Function.toString (f : Function) : String :=
   let body := Instr.listToString f.body |>.replace "\n" "\n  "
-  s!"(func {f.lbl} {f.typeuse} {f.locals}\n  {body}\n)"
+  s!"(func {f.lbl} {f.typeuse} {f.locals}\n  {body})"
 instance : ToString Function := ⟨Function.toString⟩
 instance : ToString (List Function) :=
   ⟨String.intercalate "\n" ∘ List.map toString⟩
