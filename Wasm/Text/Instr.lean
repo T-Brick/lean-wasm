@@ -174,7 +174,8 @@ termination_by
   Instr.ofSyntaxInstrList is => sizeOf is
 
 instance : Coe Syntax.Instr Instr := ⟨Instr.ofSyntaxInstr⟩
-
+instance : Coe Instr.Plain Instr := ⟨Instr.plain⟩
+instance : Coe Instr.Block Instr := ⟨Instr.block⟩
 
 nonrec def Label.toString : Label → String
   | .name n => toString n
