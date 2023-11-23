@@ -222,7 +222,7 @@ def Binop.toString : Binop → String
   | .sub   => "sub"
   | .mul   => "mul"
   | .div s => s!"div_{s}"
-  | .mod s => s!"mod_{s}"
+  | .rem s => s!"rem_{s}"
   | .and   => "and"
   | .or    => "or"
   | .xor   => "xor"

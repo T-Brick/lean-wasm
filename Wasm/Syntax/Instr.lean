@@ -53,7 +53,7 @@ inductive Integer.Binop
 | sub
 | mul
 | div : Sign → Integer.Binop
-| mod : Sign → Integer.Binop
+| rem : Sign → Integer.Binop
 | and
 | or
 | xor

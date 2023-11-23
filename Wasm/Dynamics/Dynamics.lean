@@ -75,17 +75,17 @@ inductive Binop : Step
 | div_s   : Signed.divOpt c₁ c₂ = .some c
           → Binop (s, (f, ibinop (.div .s) :: const c₂ :: const c₁ :: is))
                   (s, (f, const c :: is))
-| mod_u_t : Unsigned.remOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.mod .u) :: const c₂ :: const c₁ :: is))
+| rem_u_t : Unsigned.remOpt c₁ c₂ = .none
+          → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
                   (s, (f, .admin .trap :: is))
-| mod_u   : Unsigned.remOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.mod .u) :: const c₂ :: const c₁ :: is))
+| rem_u   : Unsigned.remOpt c₁ c₂ = .some c
+          → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
                   (s, (f, const c :: is))
-| mod_s_t : Signed.remOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.mod .s) :: const c₂ :: const c₁ :: is))
+| rem_s_t : Signed.remOpt c₁ c₂ = .none
+          → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
                   (s, (f, .admin .trap :: is))
-| mod_s   : Signed.remOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.mod .s) :: const c₂ :: const c₁ :: is))
+| rem_s   : Signed.remOpt c₁ c₂ = .some c
+          → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
                   (s, (f, const c :: is))
 | and     : Binop (s, (f, ibinop .and :: const c₂ :: const c₁ :: is))
                   (s, (f, const (Unsigned.and c₁ c₂) :: is))
