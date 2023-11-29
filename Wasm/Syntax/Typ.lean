@@ -37,8 +37,8 @@ structure Func where
 deriving DecidableEq, Inhabited
 
 structure Limit where
-  min : UInt32 -- number of page sizes
-  max : Option UInt32
+  min : Unsigned32 -- number of page sizes
+  max : Option Unsigned32
 
 @[inline] def Mem := Limit
 @[inline] def Table := Limit × Ref

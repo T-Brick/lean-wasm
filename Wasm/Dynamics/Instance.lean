@@ -94,7 +94,7 @@ def Memory.write
   | .cons b bs =>
     let pos' := ⟨pos, by
         rw [List.length_cons] at h
-        exact lt_left_add (Nat.lt_of_succ_le h)
+        exact Nat.lt_left_add (Nat.lt_of_succ_le h)
       ⟩
     let data' := mem.data.set pos' b
     let mem' : Memory := ⟨mem.type, data', by

@@ -401,7 +401,7 @@ inductive Table : Step
           → {h₁ : src.toNat + (n.toNat + 1) ≤ elem.elem.length}
           → {h₂ : d.toNat + (n.toNat + 1) ≤ elem.elem.length}
           → {_ : IsValue val (.ref v)}
-          → {_h : v = elem.elem.get ⟨src.toNat, by rw [Nat.add_succ, Nat.succ_le] at h₁; exact lt_left_add h₁⟩}
+          → {_h : v = elem.elem.get ⟨src.toNat, by rw [Nat.add_succ, Nat.succ_le] at h₁; exact Nat.lt_left_add h₁⟩}
           → {_ : d.toNat + 1 < Unsigned.MAX ⟨32, by simp⟩} -- prove using h₂, like in h
           → {_ : src.toNat + 1 < Unsigned.MAX ⟨32, by simp⟩} -- prove using h₁, like in h
           → Table (s, (f, table (.init (Vec.index f.module.tableaddrs x) (Vec.index f.module.elemaddrs y))

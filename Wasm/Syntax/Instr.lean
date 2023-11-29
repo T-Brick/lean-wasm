@@ -183,13 +183,13 @@ inductive Float : (nn : Numeric.Size) → Type
 end Memory
 
 inductive Memory
-| integer : Memory.Integer nn → Memory
-| float   : Memory.Float nn → Memory
+| integer   : Memory.Integer nn → Memory
+| float     : Memory.Float nn → Memory
 | size
 | grow
 | fill
 | copy
-| init : Module.Index.Data → Memory
+| init      : Module.Index.Data → Memory
 | data_drop : Module.Index.Data → Memory
 
 

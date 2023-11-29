@@ -107,13 +107,13 @@ def Function.Index.Instrs (expr : List Syntax.Instr)
   match expr with
   | .nil       => ⟨Vec.nil, by simp⟩
   | .cons i is =>
-    let ⟨v, len⟩ := Function.Index.Instrs is (by rw [List.length_cons] at h₁; apply lt_left_add h₁)
+    let ⟨v, len⟩ := Function.Index.Instrs is (by rw [List.length_cons] at h₁; apply Nat.lt_left_add h₁)
     match Function.Index.Instr i with
     | .none => ⟨v, by rw [List.length_cons]; apply Nat.le_succ_of_le len⟩
     | .some index =>
       let ⟨res, vlen⟩ := Vec.length_cons index v (by
         rw [List.length_cons] at h₁
-        apply le_trans_lt (Nat.succ_le_succ len) h₁
+        apply Nat.le_trans_lt (Nat.succ_le_succ len) h₁
       )
       ⟨res, by rw [List.length_cons, vlen]; apply Nat.succ_le_succ len⟩
 
@@ -122,16 +122,16 @@ def Function.Index.List (globals : List Syntax.Instr)
                         (exports : List Index.Function)
                         (len : globals.length + elems.length + exports.length < Vec.max_length)
                         : Vec Index.Function :=
-  let ⟨gidx, glen⟩ := Index.Instrs globals (by rw [Nat.add_assoc] at len; apply lt_left_add len)
-  let ⟨eidx, elen⟩ := Index.Instrs elems (by rw [Nat.add_right_comm] at len; apply lt_add_left len)
-  let xidx : Vec Index.Function := ⟨exports, by apply lt_add_left len⟩
-  let gelen := by exact le_trans_lt (Nat.add_le_add glen elen) (lt_left_add len)
+  let ⟨gidx, glen⟩ := Index.Instrs globals (by rw [Nat.add_assoc] at len; apply Nat.lt_left_add len)
+  let ⟨eidx, elen⟩ := Index.Instrs elems (by rw [Nat.add_right_comm] at len; apply Nat.lt_add_left len)
+  let xidx : Vec Index.Function := ⟨exports, by apply Nat.lt_add_left len⟩
+  let gelen := by exact Nat.le_trans_lt (Nat.add_le_add glen elen) (Nat.lt_left_add len)
   let ⟨geidx, gelen⟩ := Vec.length_append gidx eidx gelen
   Vec.append geidx xidx (by
     have xlen : xidx.list.length = exports.length := by rfl
     have h := Nat.add_le_add (Nat.add_le_add glen elen) (Nat.le_of_eq xlen)
     rw [gelen]
-    exact le_trans_lt h len
+    exact Nat.le_trans_lt h len
   )
 
 def Function.Index (globals : Vec Syntax.Module.Global)
@@ -147,7 +147,7 @@ def Function.Index (globals : Vec Syntax.Module.Global)
     )
   let exports_lst := exports.list.filterMap has_index
   let exports_len : exports_lst.length < Vec.max_length := by
-    exact le_trans_lt (List.length_filterMap_le has_index exports.list) exports.maxLen
+    exact Nat.le_trans_lt (List.length_filterMap_le has_index exports.list) exports.maxLen
   let res := Function.Index.List globals_lst elems_lst exports_lst sorry
   res
 
@@ -180,20 +180,20 @@ inductive Module : Module → List Typ.Extern → List Typ.Extern → Prop
          → (C : Context) =
               { types       := type
               , funcs       := Vec.append
-                                ⟨Typ.Extern.funcs it, lt_left_add funcsMax⟩
-                                ⟨ft, lt_add_left funcsMax⟩
+                                ⟨Typ.Extern.funcs it, Nat.lt_left_add funcsMax⟩
+                                ⟨ft, Nat.lt_add_left funcsMax⟩
                                 funcsMax
               , tables      := Vec.append
-                                ⟨Typ.Extern.tables it, lt_left_add tablesMax⟩
-                                ⟨tt, lt_add_left tablesMax⟩
+                                ⟨Typ.Extern.tables it, Nat.lt_left_add tablesMax⟩
+                                ⟨tt, Nat.lt_add_left tablesMax⟩
                                 tablesMax
               , mems        := Vec.append
-                                ⟨Typ.Extern.mems it, lt_left_add memsMax⟩
-                                ⟨mt', lt_add_left memsMax⟩
+                                ⟨Typ.Extern.mems it, Nat.lt_left_add memsMax⟩
+                                ⟨mt', Nat.lt_add_left memsMax⟩
                                 memsMax
               , globals     := Vec.append
-                                ⟨Typ.Extern.globals it, lt_left_add globalsMax⟩
-                                ⟨gt, lt_add_left globalsMax⟩
+                                ⟨Typ.Extern.globals it, Nat.lt_left_add globalsMax⟩
+                                ⟨gt, Nat.lt_add_left globalsMax⟩
                                 globalsMax
               , elems       := ⟨rt, elemsMax⟩
               , datas       := data.map (fun _ => ())
@@ -207,7 +207,7 @@ inductive Module : Module → List Typ.Extern → List Typ.Extern → Prop
               , funcs       := C.funcs
               , tables      := Vec.nil
               , mems        := Vec.nil
-              , globals     := ⟨Typ.Extern.globals it, lt_left_add globalsMax⟩
+              , globals     := ⟨Typ.Extern.globals it, Nat.lt_left_add globalsMax⟩
               , elems       := Vec.nil
               , datas       := Vec.nil
               , locals      := Vec.nil
