@@ -7,47 +7,47 @@ namespace Wasm.Binary.Module.Index
 open Wasm.Syntax.Module.Index
 
 instance : Opcode Typ      := ⟨toOpcode ∘ cast (by unfold Typ     ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Typ     ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing type index." do
+    let res ← ofOpcode
+    return cast (by unfold Typ; rfl) res
   ⟩
 instance : Opcode Function := ⟨toOpcode ∘ cast (by unfold Function; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Function; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing function index." do
+    let res ← ofOpcode
+    return cast (by unfold Function; rfl) res
   ⟩
 instance : Opcode Table    := ⟨toOpcode ∘ cast (by unfold Table   ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Table   ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing table index." do
+    let res ← ofOpcode
+    return cast (by unfold Table; rfl) res
   ⟩
 instance : Opcode Memory   := ⟨toOpcode ∘ cast (by unfold Memory  ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Memory; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing memory index." do
+    let res ← ofOpcode
+    return cast (by unfold Memory; rfl) res
   ⟩
 instance : Opcode Global   := ⟨toOpcode ∘ cast (by unfold Global  ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Global  ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing global index." do
+    let res ← ofOpcode
+    return cast (by unfold Global; rfl) res
   ⟩
 instance : Opcode Element  := ⟨toOpcode ∘ cast (by unfold Element ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Element ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing element index." do
+    let res ← ofOpcode
+    return cast (by unfold Element; rfl) res
   ⟩
 instance : Opcode Data     := ⟨toOpcode ∘ cast (by unfold Data    ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Data    ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing data index." do
+    let res ← ofOpcode
+    return cast (by unfold Data; rfl) res
   ⟩
 instance : Opcode Local    := ⟨toOpcode ∘ cast (by unfold Local   ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Local   ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing local index." do
+    let res ← ofOpcode
+    return cast (by unfold Local; rfl) res
   ⟩
 instance : Opcode Label    := ⟨toOpcode ∘ cast (by unfold Label   ; rfl),
-  fun x => do
-    let resb ← ofOpcode x
-    return (cast (by unfold Label   ; rfl) resb.1, resb.2)
+    Bytecode.err_log "Parsing label index." do
+    let res ← ofOpcode
+    return cast (by unfold Label; rfl) res
   ⟩

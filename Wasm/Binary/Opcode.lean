@@ -7,21 +7,78 @@ namespace Wasm.Binary
 
 abbrev Byte    := UInt8
 abbrev ByteSeq := List Byte -- maybe change : )
+@[inline] def Byte.toSeq : UInt8 → List UInt8 := (.cons · [])
 
-def Byte.toSeq : UInt8 → List UInt8 := (.cons · [])
+instance : ToString ByteSeq := ⟨String.concatWith " "⟩
 
-instance : Coe Byte ByteSeq := ⟨Byte.toSeq⟩
+structure Bytecode.Error where
+  log : List String -- todo maybe change ?
+instance : ToString Bytecode.Error :=
+  ⟨fun err => String.intercalate "\n" err.log.reverse⟩
 
-class Opcode (α : Type u) where
+abbrev Bytecode := ExceptT (Bytecode.Error) (StateM ByteSeq)
+
+instance : Monad Bytecode := show Monad (ExceptT _ _) from inferInstance
+
+namespace Bytecode
+
+@[inline] def err : Bytecode α := do throw ⟨[]⟩
+@[inline] def errMsg (msg : String) : Bytecode α := do throw ⟨[msg]⟩
+
+@[inline] def err_log (msg : String) : Bytecode α → Bytecode α :=
+    ExceptT.adapt (fun err =>
+      {err with log := msg :: err.log}
+    )
+@[inline] def err_replace (f : String → String) : Bytecode α → Bytecode α :=
+    ExceptT.adapt (fun err =>
+      match err.log with
+      | msg :: msgs => {err with log := f msg :: msgs}
+      | []          => err
+    )
+
+@[inline] def readByte : Bytecode Byte := do
+  match ← get with
+  | b :: bs => set bs; return b
+  | []      => errMsg "Tried parsing byte but stream empty."
+
+@[inline] def peekByte : Bytecode Byte := do
+  match ← get with
+  | b :: _ => return b
+  | []      => errMsg "Tried peeking byte but stream empty."
+
+-- returns the old byte
+@[inline] def modifyByte (f : Byte → Byte) : Bytecode Byte := do
+  match ← get with
+  | b :: bs => set (f b :: bs); return b
+  | []      => errMsg "Tried modifying byte but stream empty."
+
+
+def or (p₁ p₂ : Bytecode α) : Bytecode α := fun state => do
+  match ← p₁ state with
+  | (.ok a   , state') => return (.ok a, state')
+  | (.error _e, _state') =>
+    match ← p₂ state with
+    | (.ok a   , state') => return (.ok a, state')
+    | (.error e, state') => return (.error e, state')
+
+instance : OrElse (Bytecode α) where
+  orElse p q := or p (q ())
+
+end Bytecode
+
+class Opcode (α : Type) where
   toOpcode : α → ByteSeq
-  ofOpcode : ByteSeq → Option (α × ByteSeq)
+  ofOpcode : Bytecode α
 
 export Opcode (toOpcode ofOpcode)
-
 instance {α} [Opcode α] : Opcode (id α) := inferInstanceAs (Opcode α)
 instance {α} [Opcode α] : Opcode (Id α) := inferInstanceAs (Opcode α)
 
+def Byte.toOpcode : Byte → ByteSeq := ([·])
+def Byte.ofOpcode : Bytecode Byte := Bytecode.readByte
+
 -- todo: use Unsigned stuff
+instance : Opcode Byte := ⟨Byte.toOpcode, Byte.ofOpcode⟩
 instance : Opcode (Unsigned n) := ⟨sorry, sorry⟩
 instance : Opcode (Signed n)   := ⟨sorry, sorry⟩
 instance : Opcode Nat          := ⟨sorry, sorry⟩
@@ -33,20 +90,24 @@ nonrec def List.toOpcode [Opcode α] (list : List α) : ByteSeq :=
 nonrec def Vec.toOpcode [Opcode α] (vec : Vec α) : ByteSeq :=
   toOpcode vec.length ++ (vec.list.map toOpcode).join
 
-nonrec def Vec.ofOpcode [Opcode α] (bytes : ByteSeq)
-    : Option (Vec α × ByteSeq) := do
-  let lenbytes : Unsigned32 × ByteSeq ← ofOpcode bytes
-
+nonrec def Vec.ofOpcode [Opcode α] : Bytecode (Vec α) := do
+  let len : Unsigned32 ← ofOpcode
   let mut vec := Vec.nil
-  let mut bytes := lenbytes.2
-  for i in [:lenbytes.1.toNat] do
-    let valbytes : α × ByteSeq ← ofOpcode bytes
-    bytes := valbytes.2
+  for i in [:len.toNat] do
+    let val : α ← ofOpcode
+    vec := Vec.cons val vec (by sorry)
 
-    vec := Vec.cons valbytes.1 vec (by
-        sorry
-      )
-
-  return (vec.reverse, bytes)
+  return vec.reverse
 
 instance [Opcode α] : Opcode (Vec α) := ⟨Vec.toOpcode, Vec.ofOpcode⟩
+
+
+def Value.Name.toOpcode (name :Wasm.Syntax.Value.Name) : ByteSeq :=
+  name.value.toUTF8.toList
+
+def Value.Name.ofOpcode : Bytecode Wasm.Syntax.Value.Name := do
+  let name ← Vec.ofOpcode
+  return ⟨String.fromUTF8Unchecked (name.list.toByteArray), sorry⟩
+
+instance : Opcode Wasm.Syntax.Value.Name :=
+  ⟨Value.Name.toOpcode, Value.Name.ofOpcode⟩

@@ -18,15 +18,15 @@ nonrec def BlockType.toOpcode : BlockType → ByteSeq
   | .value (.some t) => toOpcode t
   | .index i         => toOpcode (Signed.ofInt i.toInt : Signed33)
 
-nonrec def BlockType.ofOpcode : ByteSeq → Option (BlockType × ByteSeq)
-  | 0x40 :: rest => .some (.value .none, rest)
-  | bytes =>
-        (do (← Typ.Val.ofOpcode bytes) |>.map (BlockType.value ∘ .some) id)
-    <|> (do let xb ← ofOpcode (α := Signed33) bytes
-            if xb.1 ≥ 0 then
-              return (.index (Unsigned.ofInt xb.1.toInt), xb.2)
-            else .none
-        )
+nonrec def BlockType.ofOpcode : Bytecode BlockType :=
+  Bytecode.err_log "Parsing block type." do
+      (do return BlockType.value (.some (← Typ.Val.ofOpcode)))
+  <|> (do let x ← ofOpcode (α := Signed33)
+          if x ≥ 0 then return .index (Unsigned.ofInt x.toInt)
+          else Bytecode.err)
+  <|> match ← Bytecode.readByte with
+      | 0x40 => return .value .none
+      | _    => Bytecode.err
 
 instance : Opcode BlockType := ⟨BlockType.toOpcode, BlockType.ofOpcode⟩
 
@@ -35,10 +35,12 @@ def Pseudo.toOpcode : Pseudo → Byte
   | .wasm_end  => 0x0B
   | .wasm_else => 0x05
 
-def Pseudo.ofOpcode : ByteSeq → Option (Pseudo × ByteSeq)
-  | 0x0B :: rest => .some (.wasm_end, rest)
-  | 0x05 :: rest => .some (.wasm_else, rest)
-  | _            => .none
+def Pseudo.ofOpcode : Bytecode Pseudo :=
+  Bytecode.err_log "Parsing pseudo instruction." do
+  match ← Bytecode.readByte with
+  | 0x0B => return .wasm_end
+  | 0x05 => return .wasm_else
+  | _    => Bytecode.err
 
 instance : Opcode Pseudo := ⟨Byte.toSeq ∘ Pseudo.toOpcode, Pseudo.ofOpcode⟩
 
@@ -59,14 +61,17 @@ def Unop.toOpcode32 : Unop → Byte
 def Unop.toOpcode64 (op : Unop) : Byte :=
   Unop.toOpcode32 op + Unop.opcodeBitOffset
 
-def Unop.ofOpcode32 : ByteSeq → Option (Unop × ByteSeq)
-  | 0x67 :: rest => .some (.clz   , rest)
-  | 0x68 :: rest => .some (.ctz   , rest)
-  | 0x69 :: rest => .some (.popcnt, rest)
-  | _            => .none
-def Unop.ofOpcode64 : ByteSeq → Option (Unop × ByteSeq)
-  | byte :: rest => Unop.ofOpcode32 ((byte - Unop.opcodeBitOffset) :: rest)
-  | _            => .none
+def Unop.ofOpcode32 : Bytecode Unop :=
+  Bytecode.err_log "Parsing i32 unop instruction." do
+  match ← Bytecode.readByte with
+  | 0x67 => return .clz
+  | 0x68 => return .ctz
+  | 0x69 => return .popcnt
+  | _    => Bytecode.err
+def Unop.ofOpcode64 : Bytecode Unop :=
+  Bytecode.err_replace (fun _ => "Parsing i64 unop instruction.") do
+  let _ ← Bytecode.modifyByte (· - Unop.opcodeBitOffset)
+  return ← Unop.ofOpcode32
 
 
 -- i32 and i64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -91,37 +96,44 @@ def Binop.toOpcode32 : Binop → Byte
 def Binop.toOpcode64 (op : Binop) : Byte :=
   Binop.toOpcode32 op + Binop.opcodeBitOffset
 
-def Binop.ofOpcode32 : ByteSeq → Option (Binop × ByteSeq)
-  | 0x6A :: rest => .some (.add   , rest)
-  | 0x6B :: rest => .some (.sub   , rest)
-  | 0x6C :: rest => .some (.mul   , rest)
-  | 0x6D :: rest => .some (.div .s, rest)
-  | 0x6E :: rest => .some (.div .u, rest)
-  | 0x6F :: rest => .some (.rem .s, rest)
-  | 0x70 :: rest => .some (.rem .u, rest)
-  | 0x71 :: rest => .some (.and   , rest)
-  | 0x72 :: rest => .some (.or    , rest)
-  | 0x73 :: rest => .some (.xor   , rest)
-  | 0x74 :: rest => .some (.shl   , rest)
-  | 0x75 :: rest => .some (.shr .s, rest)
-  | 0x76 :: rest => .some (.shr .u, rest)
-  | 0x77 :: rest => .some (.rotl  , rest)
-  | 0x78 :: rest => .some (.rotr  , rest)
-  | _            => .none
-def Binop.ofOpcode64 : ByteSeq → Option (Binop × ByteSeq)
-  | byte :: rest => Binop.ofOpcode32 ((byte - Binop.opcodeBitOffset) :: rest)
-  | _            => .none
+def Binop.ofOpcode32 : Bytecode Binop :=
+  Bytecode.err_log "Parsing i32 binop instruction." do
+  match ← Bytecode.readByte with
+  | 0x6A => return .add
+  | 0x6B => return .sub
+  | 0x6C => return .mul
+  | 0x6D => return .div .s
+  | 0x6E => return .div .u
+  | 0x6F => return .rem .s
+  | 0x70 => return .rem .u
+  | 0x71 => return .and
+  | 0x72 => return .or
+  | 0x73 => return .xor
+  | 0x74 => return .shl
+  | 0x75 => return .shr .s
+  | 0x76 => return .shr .u
+  | 0x77 => return .rotl
+  | 0x78 => return .rotr
+  | _    => Bytecode.err
+def Binop.ofOpcode64 : Bytecode Binop :=
+  Bytecode.err_replace (fun _ => "Parsing i64 binop instruction.") do
+  let _ ← Bytecode.modifyByte (· - Binop.opcodeBitOffset)
+  return ← Binop.ofOpcode32
 
 
 def Test.toOpcode32 : Test → Byte | .eqz => 0x45
 def Test.toOpcode64 : Test → Byte | .eqz => 0x50
 
-def Test.ofOpcode32 : ByteSeq → Option (Test × ByteSeq)
-  | 0x45 :: rest => .some (.eqz, rest)
-  | _            => .none
-def Test.ofOpcode64 : ByteSeq → Option (Test × ByteSeq)
-  | 0x50 :: rest => .some (.eqz, rest)
-  | _            => .none
+def Test.ofOpcode32 : Bytecode Test :=
+  Bytecode.err_log "Parsing i32 test instruction." do
+  match ← Bytecode.readByte with
+  | 0x45 => return .eqz
+  | _    => Bytecode.err
+def Test.ofOpcode64 : Bytecode Test :=
+  Bytecode.err_log "Parsing i64 test instruction." do
+  match ← Bytecode.readByte with
+  | 0x50 => return .eqz
+  | _    => Bytecode.err
 
 
 -- i32 and i64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -141,22 +153,24 @@ def Relation.toOpcode32 : Relation → Byte
 def Relation.toOpcode64 (rel : Relation) : Byte :=
   Relation.toOpcode32 rel + Relation.opcodeBitOffset
 
-def Relation.ofOpcode32 : ByteSeq → Option (Relation × ByteSeq)
-  | 0x46 :: rest => .some (.eq   , rest)
-  | 0x47 :: rest => .some (.ne   , rest)
-  | 0x48 :: rest => .some (.lt .s, rest)
-  | 0x49 :: rest => .some (.lt .u, rest)
-  | 0x4A :: rest => .some (.gt .s, rest)
-  | 0x4B :: rest => .some (.gt .u, rest)
-  | 0x4C :: rest => .some (.le .s, rest)
-  | 0x4D :: rest => .some (.le .u, rest)
-  | 0x4E :: rest => .some (.ge .s, rest)
-  | 0x4F :: rest => .some (.ge .u, rest)
-  | _            => .none
-def Relation.ofOpcode64 : ByteSeq → Option (Relation × ByteSeq)
-  | byte :: rest =>
-    Relation.ofOpcode32 ((byte - Relation.opcodeBitOffset) :: rest)
-  | _            => .none
+def Relation.ofOpcode32 : Bytecode Relation :=
+  Bytecode.err_log "Parsing i32 relation instruction." do
+  match ← Bytecode.readByte with
+  | 0x46 => return .eq
+  | 0x47 => return .ne
+  | 0x48 => return .lt .s
+  | 0x49 => return .lt .u
+  | 0x4A => return .gt .s
+  | 0x4B => return .gt .u
+  | 0x4C => return .le .s
+  | 0x4D => return .le .u
+  | 0x4E => return .ge .s
+  | 0x4F => return .ge .u
+  | _    => Bytecode.err
+def Relation.ofOpcode64 : Bytecode Relation :=
+  Bytecode.err_replace (fun _ => "Parsing i64 binop instruction.") do
+  let _ ← Bytecode.modifyByte (· - Relation.opcodeBitOffset)
+  return ← Relation.ofOpcode32
 
 
 nonrec def toOpcode : Integer nn → ByteSeq
@@ -216,71 +230,72 @@ nonrec def toOpcode : Integer nn → ByteSeq
       | .quad   => toOpcode (7 : Unsigned32)
   | .reinterpret_f     => match nn with | .double => [0xBC] | .quad => [0xBD]
 
-nonrec def ofOpcode : ByteSeq → Option (Integer nn × ByteSeq)
-  | 0x41 :: rest =>
-    match size_eq : nn with
-    | .double => do
-      let constb : (Signed nn.toBits) × ByteSeq ← ofOpcode rest
-      let v := constb.1.toUnsignedN
-      return (.const (cast (by rw [size_eq]) v), constb.2)
-    | .quad   => .none
-  | 0x42 :: rest =>
-    match size_eq : nn with
-    | .double => .none
-    | .quad   => do
-      let constb : (Signed nn.toBits) × ByteSeq ← ofOpcode rest
-      let v := constb.1.toUnsignedN
-      return (.const (cast (by rw [size_eq]) v), constb.2)
-  | bytes =>
-    match nn with
+nonrec def ofOpcode : Bytecode (Integer nn) :=
+  Bytecode.err_log s!"Parsing i{nn.toBits} instruction." do
+  ( match nn with
     | .double =>
-          (do return (← Unop.ofOpcode32     bytes).map Integer.unop      id)
-      <|> (do return (← Binop.ofOpcode32    bytes).map Integer.binop     id)
-      <|> (do return (← Test.ofOpcode32     bytes).map Integer.test      id)
-      <|> (do return (← Relation.ofOpcode32 bytes).map Integer.relation  id)
-      <|> ( match bytes with
-            | 0xA7 :: rest => .some (.wrap_i64          , rest)
-            | 0xA8 :: rest => .some (.trunc_f .double .s, rest)
-            | 0xA9 :: rest => .some (.trunc_f .double .u, rest)
-            | 0xAA :: rest => .some (.trunc_f .quad   .s, rest)
-            | 0xAB :: rest => .some (.trunc_f .quad   .u, rest)
-            | 0xBC :: rest => .some (.reinterpret_f     , rest)
-            | 0xC0 :: rest => .some (.extend8_s         , rest)
-            | 0xC1 :: rest => .some (.extend16_s        , rest)
-            | 0xFC :: rest => do
-              let vb : Unsigned32 × ByteSeq ← ofOpcode rest
-              if vb.1 = 0 then return (trunc_sat_f .double .s, vb.2)
-              if vb.1 = 1 then return (trunc_sat_f .double .u, vb.2)
-              if vb.1 = 2 then return (trunc_sat_f .quad   .s, vb.2)
-              if vb.1 = 3 then return (trunc_sat_f .quad   .u, vb.2)
-              none
-            | _            => .none
+          (do return Integer.unop     (← Unop.ofOpcode32    ))
+      <|> (do return Integer.binop    (← Binop.ofOpcode32   ))
+      <|> (do return Integer.test     (← Test.ofOpcode32    ))
+      <|> (do return Integer.relation (← Relation.ofOpcode32))
+      <|> (do match ← Bytecode.readByte with
+              | 0xA7 => return .wrap_i64
+              | 0xA8 => return .trunc_f .double .s
+              | 0xA9 => return .trunc_f .double .u
+              | 0xAA => return .trunc_f .quad   .s
+              | 0xAB => return .trunc_f .quad   .u
+              | 0xBC => return .reinterpret_f
+              | 0xC0 => return .extend8_s
+              | 0xC1 => return .extend16_s
+              | 0xFC => do
+                let v ← ofOpcode
+                if v = 0 then return trunc_sat_f .double .s
+                if v = 1 then return trunc_sat_f .double .u
+                if v = 2 then return trunc_sat_f .quad   .s
+                if v = 3 then return trunc_sat_f .quad   .u
+                Bytecode.err
+              | _ => Bytecode.err
           )
     | .quad   =>
-          (do return (← Unop.ofOpcode64     bytes).map Integer.unop      id)
-      <|> (do return (← Binop.ofOpcode64    bytes).map Integer.binop     id)
-      <|> (do return (← Test.ofOpcode64     bytes).map Integer.test      id)
-      <|> (do return (← Relation.ofOpcode64 bytes).map Integer.relation  id)
-      <|> ( match bytes with
-            | 0xAC :: rest => .some (.extend_i32 .s     , rest)
-            | 0xAD :: rest => .some (.extend_i32 .u     , rest)
-            | 0xAE :: rest => .some (.trunc_f .double .s, rest)
-            | 0xAF :: rest => .some (.trunc_f .double .u, rest)
-            | 0xB0 :: rest => .some (.trunc_f .quad   .s, rest)
-            | 0xB1 :: rest => .some (.trunc_f .quad   .u, rest)
-            | 0xBD :: rest => .some (.reinterpret_f     , rest)
-            | 0xC2 :: rest => .some (.extend8_s         , rest)
-            | 0xC3 :: rest => .some (.extend16_s        , rest)
-            | 0xC4 :: rest => .some (.extend32_s        , rest)
-            | 0xFC :: rest => do
-              let vb : Unsigned32 × ByteSeq ← ofOpcode rest
-              if vb.1 = 4 then return (trunc_sat_f .double .s, vb.2)
-              if vb.1 = 5 then return (trunc_sat_f .double .u, vb.2)
-              if vb.1 = 6 then return (trunc_sat_f .quad   .s, vb.2)
-              if vb.1 = 7 then return (trunc_sat_f .quad   .u, vb.2)
-              none
-            | _            => .none
+          (do return Integer.unop     (← Unop.ofOpcode64    ))
+      <|> (do return Integer.binop    (← Binop.ofOpcode64   ))
+      <|> (do return Integer.test     (← Test.ofOpcode64    ))
+      <|> (do return Integer.relation (← Relation.ofOpcode64))
+      <|> (do match ← Bytecode.readByte with
+              | 0xAC => return .extend_i32 .s
+              | 0xAD => return .extend_i32 .u
+              | 0xAE => return .trunc_f .double .s
+              | 0xAF => return .trunc_f .double .s
+              | 0xB0 => return .trunc_f .quad   .s
+              | 0xB1 => return .trunc_f .quad   .s
+              | 0xBD => return .reinterpret_f
+              | 0xC2 => return .extend8_s
+              | 0xC3 => return .extend16_s
+              | 0xC4 => return .extend32_s
+              | 0xFC =>
+                let v ← ofOpcode
+                if v = 4 then return trunc_sat_f .double .s
+                if v = 5 then return trunc_sat_f .double .u
+                if v = 6 then return trunc_sat_f .quad   .s
+                if v = 7 then return trunc_sat_f .quad   .u
+                Bytecode.err
+              | _ => Bytecode.err
           )
+  ) <|>
+    match ← Bytecode.readByte with
+    | 0x41 =>
+      match size_eq : nn with
+      | .double => do
+        let const : (Signed nn.toBits) ← ofOpcode
+        return .const (cast (by rw [size_eq]) const.toUnsignedN)
+      | .quad   => Bytecode.err
+    | 0x42 =>
+      match size_eq : nn with
+      | .double => Bytecode.err
+      | .quad   => do
+        let const : Signed nn.toBits ← ofOpcode
+        return .const (cast (by rw [size_eq]) const.toUnsignedN)
+    | _ => Bytecode.err
 
 instance : Opcode (Integer nn) := ⟨toOpcode, ofOpcode⟩
 
@@ -304,18 +319,21 @@ def Unop.toOpcode32 : Unop → Byte
 def Unop.toOpcode64 (op : Unop) : Byte :=
   Unop.toOpcode32 op + Unop.opcodeBitOffset
 
-def Unop.ofOpcode32 : ByteSeq → Option (Unop × ByteSeq)
-  | 0x8B :: rest => .some (.abs    , rest)
-  | 0x8C :: rest => .some (.neg    , rest)
-  | 0x91 :: rest => .some (.sqrt   , rest)
-  | 0x8D :: rest => .some (.ceil   , rest)
-  | 0x8E :: rest => .some (.floor  , rest)
-  | 0x8F :: rest => .some (.trunc  , rest)
-  | 0x90 :: rest => .some (.nearest, rest)
-  | _            => .none
-def Unop.ofOpcode64 : ByteSeq → Option (Unop × ByteSeq)
-  | byte :: rest => Unop.ofOpcode32 ((byte - Unop.opcodeBitOffset) :: rest)
-  | _            => .none
+def Unop.ofOpcode32 : Bytecode Unop :=
+  Bytecode.err_log "Parsing f32 unop instruction." do
+  match ← Bytecode.readByte with
+  | 0x8B => return .abs
+  | 0x8C => return .neg
+  | 0x91 => return .sqrt
+  | 0x8D => return .ceil
+  | 0x8E => return .floor
+  | 0x8F => return .trunc
+  | 0x90 => return .nearest
+  | _    => Bytecode.err
+def Unop.ofOpcode64 : Bytecode Unop :=
+  Bytecode.err_replace (fun _ => "Parsing f64 unop instruction.") do
+  let _ ← Bytecode.modifyByte (· - Unop.opcodeBitOffset)
+  return ← Unop.ofOpcode32
 
 
 -- f32 and f64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -332,18 +350,21 @@ def Binop.toOpcode32 : Binop → Byte
 def Binop.toOpcode64 (op : Binop) : Byte :=
   Binop.toOpcode32 op + Binop.opcodeBitOffset
 
-def Binop.ofOpcode32 : ByteSeq → Option (Binop × ByteSeq)
-  | 0x92 :: rest => .some (.add      ,rest)
-  | 0x93 :: rest => .some (.sub      ,rest)
-  | 0x94 :: rest => .some (.mul      ,rest)
-  | 0x95 :: rest => .some (.div      ,rest)
-  | 0x96 :: rest => .some (.min      ,rest)
-  | 0x97 :: rest => .some (.max      ,rest)
-  | 0x98 :: rest => .some (.copysign ,rest)
-  | _            => .none
-def Binop.ofOpcode64 : ByteSeq → Option (Binop × ByteSeq)
-  | byte :: rest => Binop.ofOpcode32 ((byte - Binop.opcodeBitOffset) :: rest)
-  | _            => .none
+def Binop.ofOpcode32 : Bytecode Binop :=
+  Bytecode.err_log "Parsing f32 binop instruction." do
+  match ← Bytecode.readByte with
+  | 0x92 => return .add
+  | 0x93 => return .sub
+  | 0x94 => return .mul
+  | 0x95 => return .div
+  | 0x96 => return .min
+  | 0x97 => return .max
+  | 0x98 => return .copysign
+  | _    => Bytecode.err
+def Binop.ofOpcode64 : Bytecode Binop :=
+  Bytecode.err_replace (fun _ => "Parsing f64 binop instruction.") do
+  let _ ← Bytecode.modifyByte (· - Binop.opcodeBitOffset)
+  return ← Binop.ofOpcode32
 
 
 -- f32 and f64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -359,18 +380,20 @@ def Relation.toOpcode32 : Relation → Byte
 def Relation.toOpcode64 (rel : Relation) : Byte :=
   Relation.toOpcode32 rel + Relation.opcodeBitOffset
 
-def Relation.ofOpcode32 : ByteSeq → Option (Relation × ByteSeq)
-  | 0x5B :: rest => .some (.eq ,rest)
-  | 0x5C :: rest => .some (.ne ,rest)
-  | 0x5D :: rest => .some (.lt ,rest)
-  | 0x5E :: rest => .some (.gt ,rest)
-  | 0x5F :: rest => .some (.le ,rest)
-  | 0x60 :: rest => .some (.ge ,rest)
-  | _            => .none
-def Relation.ofOpcode64 : ByteSeq → Option (Relation × ByteSeq)
-  | byte :: rest =>
-    Relation.ofOpcode32 ((byte - Relation.opcodeBitOffset) :: rest)
-  | _            => .none
+def Relation.ofOpcode32 : Bytecode Relation :=
+  Bytecode.err_log "Parsing f32 relation instruction." do
+  match ← Bytecode.readByte with
+  | 0x5B => return .eq
+  | 0x5C => return .ne
+  | 0x5D => return .lt
+  | 0x5E => return .gt
+  | 0x5F => return .le
+  | 0x60 => return .ge
+  | _    => Bytecode.err
+def Relation.ofOpcode64 : Bytecode Relation :=
+  Bytecode.err_replace (fun _ => "Parsing f64 relation instruction.") do
+  let _ ← Bytecode.modifyByte (· - Relation.opcodeBitOffset)
+  return ← Relation.ofOpcode32
 
 nonrec def toOpcode : Float nn → ByteSeq
   | .const v         =>
@@ -401,47 +424,51 @@ nonrec def toOpcode : Float nn → ByteSeq
     | .quad   => match mm with | .double => [0xB8] | .quad => [0xBA]
   | .reinterpret_i   => match nn with | .double => [0xBE] | .quad => [0xBF]
 
-nonrec def ofOpcode : ByteSeq → Option (Float nn × ByteSeq)
-  | 0x43 :: rest =>
-    match _size_eq : nn with
-    | .double => do
-      let vb : (Wasm.Syntax.Value.FloatN nn.toBits) × ByteSeq ← ofOpcode rest
-      return (.const vb.1, vb.2)
-    | .quad   => .none
-  | 0x44 :: rest =>
-    match _size_eq : nn with
-    | .double => .none
-    | .quad   => do
-      let vb : (Wasm.Syntax.Value.FloatN nn.toBits) × ByteSeq ← ofOpcode rest
-      return (.const vb.1, vb.2)
-  | bytes =>
-    match nn with
-    | .double =>
-          (do return (← Unop.ofOpcode32     bytes).map Float.unop      id)
-      <|> (do return (← Binop.ofOpcode32    bytes).map Float.binop     id)
-      <|> (do return (← Relation.ofOpcode32 bytes).map Float.relation  id)
-      <|> ( match bytes with
-            | 0xB2 :: rest => .some (.convert_i .double .s, rest)
-            | 0xB3 :: rest => .some (.convert_i .double .u, rest)
-            | 0xB4 :: rest => .some (.convert_i .quad   .s, rest)
-            | 0xB5 :: rest => .some (.convert_i .quad   .u, rest)
-            | 0xB6 :: rest => .some (.demote_f64          , rest)
-            | 0xBE :: rest => .some (.reinterpret_i       , rest)
-            | _            => .none
-          )
-    | .quad   =>
-          (do return (← Unop.ofOpcode64     bytes).map Float.unop      id)
-      <|> (do return (← Binop.ofOpcode64    bytes).map Float.binop     id)
-      <|> (do return (← Relation.ofOpcode64 bytes).map Float.relation  id)
-      <|> ( match bytes with
-            | 0xB7 :: rest => .some (.convert_i .double .s, rest)
-            | 0xB8 :: rest => .some (.convert_i .double .u, rest)
-            | 0xB9 :: rest => .some (.convert_i .quad   .s, rest)
-            | 0xBA :: rest => .some (.convert_i .quad   .u, rest)
-            | 0xBB :: rest => .some (.promote_f32         , rest)
-            | 0xBF :: rest => .some (.reinterpret_i       , rest)
-            | _            => .none
-          )
+nonrec def ofOpcode : Bytecode (Float nn) :=
+  Bytecode.err_log s!"Parsing f{nn.toBits} instruction." do
+    ( match nn with
+      | .double =>
+            (return Float.unop     (← Unop.ofOpcode32    ))
+        <|> (return Float.binop    (← Binop.ofOpcode32   ))
+        <|> (return Float.relation (← Relation.ofOpcode32))
+        <|> (do match ← Bytecode.readByte with
+                | 0xB2 => return .convert_i .double .s
+                | 0xB3 => return .convert_i .double .u
+                | 0xB4 => return .convert_i .quad   .s
+                | 0xB5 => return .convert_i .quad   .u
+                | 0xB6 => return .demote_f64
+                | 0xBE => return .reinterpret_i
+                | _    => Bytecode.err
+            )
+      | .quad   =>
+            (do return Float.unop     (← Unop.ofOpcode64    ))
+        <|> (do return Float.binop    (← Binop.ofOpcode64   ))
+        <|> (do return Float.relation (← Relation.ofOpcode64))
+        <|> (do match ← Bytecode.readByte with
+                | 0xB7 => return .convert_i .double .s
+                | 0xB8 => return .convert_i .double .u
+                | 0xB9 => return .convert_i .quad   .s
+                | 0xBA => return .convert_i .quad   .u
+                | 0xBB => return .promote_f32
+                | 0xBF => return .reinterpret_i
+                | _    => Bytecode.err
+            )
+    ) <|> (
+      match ← Bytecode.readByte with
+      | 0x43 =>
+        match _size_eq : nn with
+        | .double => do
+          let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
+          return .const v
+        | .quad   => Bytecode.err
+      | 0x44 =>
+        match _size_eq : nn with
+        | .double => Bytecode.err
+        | .quad   => do
+          let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
+          return .const v
+      | _ => Bytecode.err
+  )
 
 instance : Opcode (Float nn) := ⟨toOpcode, ofOpcode⟩
 
@@ -451,9 +478,10 @@ def toOpcode : Numeric nn → ByteSeq
   | .integer i => Integer.toOpcode i
   | .float f   => Float.toOpcode f
 
-def ofOpcode (seq : ByteSeq) : Option (Numeric nn × ByteSeq) :=
-      (do return (← Integer.ofOpcode seq).map Numeric.integer id)
-  <|> (do return (← Float.ofOpcode   seq).map Numeric.float   id)
+def ofOpcode : Bytecode (Numeric nn) :=
+  Bytecode.err_log "Parsing numeric instruction." do
+      (return Numeric.integer (← Integer.ofOpcode))
+  <|> (return Numeric.float   (← Float.ofOpcode  ))
 
 instance : Opcode (Numeric nn) := ⟨toOpcode, ofOpcode⟩
 
@@ -464,11 +492,13 @@ nonrec def Reference.toOpcode : Reference → ByteSeq
   | .is_null => 0xD1 :: []
   | .func f  => 0xD2 :: toOpcode f
 
-nonrec def Reference.ofOpcode : ByteSeq → Option (Reference × ByteSeq)
-  | 0xD0 :: rest => do (← ofOpcode rest).map Reference.null id
-  | 0xD1 :: rest => .some (.is_null, rest)
-  | 0xD2 :: rest => do (← ofOpcode rest).map Reference.func id
-  | _            => .none
+nonrec def Reference.ofOpcode : Bytecode Reference :=
+  Bytecode.err_log "Parsing reference instruction." do
+  match ← Bytecode.readByte with
+  | 0xD0 => return Reference.null (← ofOpcode)
+  | 0xD1 => return .is_null
+  | 0xD2 => return Reference.func (← ofOpcode)
+  | _    => Bytecode.err
 
 instance : Opcode Reference := ⟨Reference.toOpcode, Reference.ofOpcode⟩
 
@@ -478,11 +508,13 @@ nonrec def Local.toOpcode : Local → ByteSeq
   | .set l => 0x21 :: toOpcode l
   | .tee l => 0x22 :: toOpcode l
 
-nonrec def Local.ofOpcode : ByteSeq → Option (Local × ByteSeq)
-  | 0x20 :: rest => do (← ofOpcode rest).map Local.get id
-  | 0x21 :: rest => do (← ofOpcode rest).map Local.set id
-  | 0x22 :: rest => do (← ofOpcode rest).map Local.tee id
-  | _            => .none
+nonrec def Local.ofOpcode : Bytecode Local :=
+  Bytecode.err_log "Parsing local instruction." do
+  match ← Bytecode.readByte with
+  | 0x20 => return Local.get (← ofOpcode)
+  | 0x21 => return Local.set (← ofOpcode)
+  | 0x22 => return Local.tee (← ofOpcode)
+  | _    => Bytecode.err
 
 instance : Opcode Local := ⟨Local.toOpcode, Local.ofOpcode⟩
 
@@ -491,10 +523,12 @@ nonrec def Global.toOpcode : Global → ByteSeq
   | .get l => 0x23 :: toOpcode l
   | .set l => 0x24 :: toOpcode l
 
-nonrec def Global.ofOpcode : ByteSeq → Option (Global × ByteSeq)
-  | 0x23 :: rest => do (← ofOpcode rest).map Global.get id
-  | 0x24 :: rest => do (← ofOpcode rest).map Global.set id
-  | _            => .none
+nonrec def Global.ofOpcode : Bytecode Global :=
+  Bytecode.err_log "Parsing global instruction." do
+  match ← Bytecode.readByte with
+  | 0x23 => return Global.get (← ofOpcode)
+  | 0x24 => return Global.set (← ofOpcode)
+  | _    => Bytecode.err
 
 instance : Opcode Global := ⟨Global.toOpcode, Global.ofOpcode⟩
 
@@ -508,24 +542,26 @@ nonrec def Table.toOpcode : Table → ByteSeq
   | .copy x y => 0xFC :: toOpcode (14 : Unsigned32) ++ toOpcode x ++ toOpcode y
   | .init x y => 0xFC :: toOpcode (12 : Unsigned32) ++ toOpcode y ++ toOpcode x
 
-nonrec def Table.ofOpcode : ByteSeq → Option (Table × ByteSeq)
-  | 0x25 :: rest => do (← ofOpcode rest).map Table.get id
-  | 0x26 :: rest => do (← ofOpcode rest).map Table.set id
-  | 0xFC :: rest => do
-    let vb : Unsigned32 × ByteSeq ← ofOpcode rest
-    if vb.1 = 12 then
-      let yb ← ofOpcode vb.2
-      let xb ← ofOpcode yb.2
-      return (.init xb.1 yb.1, xb.2)
-    if vb.1 = 14 then
-      let xb ← ofOpcode vb.2
-      let yb ← ofOpcode xb.2
-      return (.copy xb.1 yb.1, yb.2)
-    if vb.1 = 15 then return (← ofOpcode vb.2).map Table.grow id
-    if vb.1 = 16 then return (← ofOpcode vb.2).map Table.size id
-    if vb.1 = 17 then return (← ofOpcode vb.2).map Table.fill id
-    none
-  | _ => .none
+nonrec def Table.ofOpcode : Bytecode Table :=
+  Bytecode.err_log "Parsing table instruction." do
+  match ← Bytecode.readByte with
+  | 0x25 => return Table.get (← ofOpcode)
+  | 0x26 => return Table.set (← ofOpcode)
+  | 0xFC =>
+    let v : Unsigned32 ← ofOpcode
+    if v = 12 then
+      let y ← ofOpcode
+      let x ← ofOpcode
+      return .init x y
+    if v = 14 then
+      let x ← ofOpcode
+      let y ← ofOpcode
+      return .copy x y
+    if v = 15 then return Table.grow (← ofOpcode)
+    if v = 16 then return Table.size (← ofOpcode)
+    if v = 17 then return Table.fill (← ofOpcode)
+    Bytecode.err
+  | _ => Bytecode.err
 
 instance : Opcode Table := ⟨Table.toOpcode, Table.ofOpcode⟩
 
@@ -534,10 +570,11 @@ open Memory
 
 nonrec def Arg.toOpcode (arg : Arg) : ByteSeq :=
   toOpcode arg.align ++ toOpcode arg.offset
-nonrec def Arg.ofOpcode (seq : ByteSeq) : Option (Arg × ByteSeq) := do
-  let ab ← ofOpcode seq
-  let ob ← ofOpcode ab.2
-  return (⟨ab.1, ob.1⟩, ob.2)
+nonrec def Arg.ofOpcode : Bytecode Arg :=
+  Bytecode.err_log "Parsing memory arg." do
+  let a ← ofOpcode
+  let o ← ofOpcode
+  return ⟨a, o⟩
 instance : Opcode Arg := ⟨Arg.toOpcode, Arg.ofOpcode⟩
 
 
@@ -562,33 +599,34 @@ nonrec def Integer.toOpcode : Integer nn → ByteSeq
     match nn with | .double => 0x3B :: toOpcode a | .quad => 0x3D :: toOpcode a
   | .store32 a   => 0x3E :: toOpcode a
 
-nonrec def Integer.ofOpcode (seq : ByteSeq) : Option (Integer nn × ByteSeq) :=
+nonrec def Integer.ofOpcode : Bytecode (Integer nn) :=
+  Bytecode.err_log s!"Parsing i{nn.toBits} memory instruction." do
   match nn with
   | .double =>
-    match seq with
-    | 0x28 :: rest => do return (← ofOpcode rest).map (Integer.load     ) id
-    | 0x2C :: rest => do return (← ofOpcode rest).map (Integer.load8  .s) id
-    | 0x2D :: rest => do return (← ofOpcode rest).map (Integer.load8  .u) id
-    | 0x2E :: rest => do return (← ofOpcode rest).map (Integer.load16 .s) id
-    | 0x2F :: rest => do return (← ofOpcode rest).map (Integer.load16 .u) id
-    | 0x36 :: rest => do return (← ofOpcode rest).map (Integer.store    ) id
-    | 0x3A :: rest => do return (← ofOpcode rest).map (Integer.store8   ) id
-    | 0x3B :: rest => do return (← ofOpcode rest).map (Integer.store16  ) id
-    | _            => .none
+    match ← Bytecode.readByte with
+    | 0x28 => return (Integer.load     ) (← ofOpcode)
+    | 0x2C => return (Integer.load8  .s) (← ofOpcode)
+    | 0x2D => return (Integer.load8  .u) (← ofOpcode)
+    | 0x2E => return (Integer.load16 .s) (← ofOpcode)
+    | 0x2F => return (Integer.load16 .u) (← ofOpcode)
+    | 0x36 => return (Integer.store    ) (← ofOpcode)
+    | 0x3A => return (Integer.store8   ) (← ofOpcode)
+    | 0x3B => return (Integer.store16  ) (← ofOpcode)
+    | _    => Bytecode.err
   | .quad   =>
-    match seq with
-    | 0x29 :: rest => do return (← ofOpcode rest).map (Integer.load     ) id
-    | 0x30 :: rest => do return (← ofOpcode rest).map (Integer.load8  .s) id
-    | 0x31 :: rest => do return (← ofOpcode rest).map (Integer.load8  .u) id
-    | 0x32 :: rest => do return (← ofOpcode rest).map (Integer.load16 .s) id
-    | 0x33 :: rest => do return (← ofOpcode rest).map (Integer.load16 .u) id
-    | 0x34 :: rest => do return (← ofOpcode rest).map (Integer.load32 .s) id
-    | 0x35 :: rest => do return (← ofOpcode rest).map (Integer.load32 .u) id
-    | 0x37 :: rest => do return (← ofOpcode rest).map (Integer.store    ) id
-    | 0x3C :: rest => do return (← ofOpcode rest).map (Integer.store8   ) id
-    | 0x3D :: rest => do return (← ofOpcode rest).map (Integer.store16  ) id
-    | 0x3E :: rest => do return (← ofOpcode rest).map (Integer.store32  ) id
-    | _            => .none
+    match ← Bytecode.readByte with
+    | 0x29 => return (Integer.load     ) (← ofOpcode)
+    | 0x30 => return (Integer.load8  .s) (← ofOpcode)
+    | 0x31 => return (Integer.load8  .u) (← ofOpcode)
+    | 0x32 => return (Integer.load16 .s) (← ofOpcode)
+    | 0x33 => return (Integer.load16 .u) (← ofOpcode)
+    | 0x34 => return (Integer.load32 .s) (← ofOpcode)
+    | 0x35 => return (Integer.load32 .u) (← ofOpcode)
+    | 0x37 => return (Integer.store    ) (← ofOpcode)
+    | 0x3C => return (Integer.store8   ) (← ofOpcode)
+    | 0x3D => return (Integer.store16  ) (← ofOpcode)
+    | 0x3E => return (Integer.store32  ) (← ofOpcode)
+    | _            => Bytecode.err
 
 instance : Opcode (Integer nn) := ⟨Integer.toOpcode, Integer.ofOpcode⟩
 
@@ -599,18 +637,19 @@ nonrec def Float.toOpcode : Float nn → ByteSeq
   | .store a =>
     match nn with | .double => 0x38 :: toOpcode a | .quad => 0x39 :: toOpcode a
 
-nonrec def Float.ofOpcode (seq : ByteSeq) : Option (Float nn × ByteSeq) :=
+nonrec def Float.ofOpcode : Bytecode (Float nn) :=
+  Bytecode.err_log s!"Parsing f{nn.toBits} memory instruction." do
   match nn with
   | .double =>
-    match seq with
-    | 0x2A :: rest => do return (← ofOpcode rest).map Float.load  id
-    | 0x38 :: rest => do return (← ofOpcode rest).map Float.store id
-    | _            => .none
+    match ← Bytecode.readByte with
+    | 0x2A => return Float.load  (← ofOpcode)
+    | 0x38 => return Float.store (← ofOpcode)
+    | _    => Bytecode.err
   | .quad   =>
-    match seq with
-    | 0x2B :: rest => do return (← ofOpcode rest).map Float.load  id
-    | 0x39 :: rest => do return (← ofOpcode rest).map Float.store id
-    | _            => .none
+    match ← Bytecode.readByte with
+    | 0x2B => do return Float.load  (← ofOpcode)
+    | 0x39 => do return Float.store (← ofOpcode)
+    | _    => Bytecode.err
 
 instance : Opcode (Float nn) := ⟨Float.toOpcode, Float.ofOpcode⟩
 
@@ -626,32 +665,44 @@ nonrec def Memory.toOpcode : Memory → ByteSeq
   | .init x      => 0xFC :: toOpcode ( 8 : Unsigned32) ++ toOpcode x ++ [0x00]
   | .data_drop x => 0xFC :: toOpcode ( 9 : Unsigned32) ++ toOpcode x
 
-nonrec def Memory.ofOpcode : ByteSeq → Option (Memory × ByteSeq)
-  | 0x3F :: 0x00 :: rest => .some (.size, rest)
-  | 0x40 :: 0x00 :: rest => .some (.grow, rest)
-  | 0xFC :: rest => do
-    let vb ← ofOpcode rest
-    if vb.1 = 11 then
-      match vb.2 with
-      | 0x00 :: rest => return (.fill, rest)
-      | _            => none
-    else if vb.1 = 10 then
-      match vb.2 with
-      | 0x00 :: 0x00 :: rest => return (.copy, rest)
-      | _                    => none
-    else if vb.1 = 9 then
-      return (← ofOpcode rest).map Memory.data_drop id
-    else if vb.1 = 8 then
-      let xb ← ofOpcode rest
-      match xb.2 with
-      | 0x00 :: rest => return (.init xb.1, rest)
-      | _            => none
-    else none
-  | seq =>
-      (do (← ofOpcode seq).map (Memory.integer (nn := .double)) id)
-  <|> (do (← ofOpcode seq).map (Memory.integer (nn := .quad  )) id)
-  <|> (do (← ofOpcode seq).map (Memory.float   (nn := .double)) id)
-  <|> (do (← ofOpcode seq).map (Memory.float   (nn := .quad  )) id)
+nonrec def Memory.ofOpcode : Bytecode Memory :=
+  Bytecode.err_log "Parsing memory instruction." do
+      (return (Memory.integer (nn := .double)) (← ofOpcode))
+  <|> (return (Memory.integer (nn := .quad  )) (← ofOpcode))
+  <|> (return (Memory.float   (nn := .double)) (← ofOpcode))
+  <|> (return (Memory.float   (nn := .quad  )) (← ofOpcode))
+  <|> ( do match ← Bytecode.readByte with
+        | 0x3F =>
+          match ← Bytecode.readByte with
+          | 0x00 => return .size
+          | _    => Bytecode.err
+        | 0x40 =>
+          match ← Bytecode.readByte with
+          | 0x00 => return .grow
+          | _    => Bytecode.err
+        | 0xFC => do
+          let v ← ofOpcode
+          if v = 11 then
+            match ← Bytecode.readByte with
+            | 0x00 => return .fill
+            | _    => Bytecode.err
+          else if v = 10 then
+            match ← Bytecode.readByte with
+            | 0x00 =>
+              match ← Bytecode.readByte with
+              | 0x00 => return .copy
+              | _    => Bytecode.err
+            | _    => Bytecode.err
+          else if v = 9 then
+            return Memory.data_drop (← ofOpcode)
+          else if v = 8 then
+            let x ← ofOpcode
+            match ← Bytecode.readByte with
+            | 0x00 => return .init x
+            | _    => Bytecode.err
+          else Bytecode.err
+        | _ => Bytecode.err
+  )
 
 instance : Opcode Memory := ⟨Memory.toOpcode, Memory.ofOpcode⟩
 
@@ -707,92 +758,132 @@ termination_by
   Instr.listToOpcode is => sizeOf is
 
 mutual
-partial def Instr.ofOpcode : ByteSeq → Option (Wasm.Syntax.Instr × ByteSeq)
-  | 0x00 :: rest => .some (.unreachable , rest)
-  | 0x01 :: rest => .some (.nop         , rest)
-  | 0x02 :: rest => do
-    let btb ← BlockType.ofOpcode rest
-    let isb ← Instr.listOfOpcode btb.2
-    let eb  ← Pseudo.ofOpcode isb.2
-    match eb.1 with
-    | .wasm_end => return (.block btb.1 isb.1 eb.1, eb.2)
-    | _         => none
-  | 0x03 :: rest => do
-    let btb ← BlockType.ofOpcode rest
-    let isb ← Instr.listOfOpcode btb.2
-    let eb  ← Pseudo.ofOpcode isb.2
-    match eb.1 with
-    | .wasm_end => return (.loop btb.1 isb.1 eb.1, eb.2)
-    | _         => none
-  | 0x04 :: rest => do
-    let btb  ← BlockType.ofOpcode rest
-    let is₁b ← Instr.listOfOpcode btb.2
-    let e₁b  ← Pseudo.ofOpcode is₁b.2
-    match e₁b.1 with
-    | .wasm_end  => return (.wasm_if btb.1 is₁b.1 .wasm_else [] e₁b.1, e₁b.2)
-    | .wasm_else =>
-      let is₂b ← Instr.listOfOpcode e₁b.2
-      let e₂b  ← Pseudo.ofOpcode is₂b.2
-      match e₂b.1 with
-      | .wasm_end => return (.wasm_if btb.1 is₁b.1 e₁b.1 is₂b.1 e₂b.1, e₂b.2)
-      | _         => none
-  | 0x0C :: rest => do
-    let lb ← Wasm.Binary.Opcode.ofOpcode rest
-    return (.br lb.1, lb.2)
-  | 0x0D :: rest => do
-    let lb ← Wasm.Binary.Opcode.ofOpcode rest
-    return (.br_if lb.1, lb.2)
-  | 0x0E :: rest => do
-    let tb ← Vec.ofOpcode rest
-    let lb ← Wasm.Binary.Opcode.ofOpcode tb.2
-    return (.br_table tb.1 lb.1, lb.2)
-  | 0x0F :: rest => .some (.wasm_return , rest)
-  | 0x10 :: rest => do
-    let fb ← Wasm.Binary.Opcode.ofOpcode rest
-    return (.call fb.1, fb.2)
-  | 0x11 :: rest => do
-    let yb ← Wasm.Binary.Opcode.ofOpcode rest
-    let xb ← Wasm.Binary.Opcode.ofOpcode yb.2
-    return (.call_indirect xb.1 yb.1, xb.2)
-  | 0x1A :: rest => .some (.drop        , rest)
-  | 0x1B :: rest => .some (.select .none, rest)
-  | 0x1C :: rest => do
-    let tb ← Vec.ofOpcode rest
-    return (.select (.some tb.1.list), tb.2)
-  |  0xFC :: rest => do
-    let vb ← Wasm.Binary.Opcode.ofOpcode rest
-    let xb ← Wasm.Binary.Opcode.ofOpcode vb.2
-    if vb.1 = 13 then return (.elem_drop xb.1, xb.2)
-    none
-  | seq =>
-        (do (← Numeric.ofOpcode   seq).map (Instr.numeric (nn := .double)) id)
-    <|> (do (← Numeric.ofOpcode   seq).map (Instr.numeric (nn := .quad  )) id)
-    <|> (do (← Reference.ofOpcode seq).map (Instr.reference              ) id)
-    <|> (do (← Local.ofOpcode     seq).map (Instr.locl                   ) id)
-    <|> (do (← Global.ofOpcode    seq).map (Instr.globl                  ) id)
-    <|> (do (← Table.ofOpcode     seq).map (Instr.table                  ) id)
-    <|> (do (← Memory.ofOpcode    seq).map (Instr.memory                 ) id)
+private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
+  Bytecode.err_log "Parsing instruction." do
+      (return (Instr.numeric (nn := .double)) (← Numeric.ofOpcode))
+  <|> (return (Instr.numeric (nn := .quad  )) (← Numeric.ofOpcode))
+  <|> (return (Instr.reference              ) (← Reference.ofOpcode))
+  <|> (return (Instr.locl                   ) (← Local.ofOpcode))
+  <|> (return (Instr.globl                  ) (← Global.ofOpcode))
+  <|> (return (Instr.table                  ) (← Table.ofOpcode))
+  <|> (return (Instr.memory                 ) (← Memory.ofOpcode))
+  <|> (do match ← Bytecode.readByte with
+          | 0x00 => return .unreachable
+          | 0x01 => return .nop
+          | 0x02 =>
+            let bt ← BlockType.ofOpcode
 
+            let bytes ← get
+            let pos' := bytes.length
+            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+            have : List.length bytes < pos := by simp at h; exact h
 
-partial def Instr.listOfOpcode : ByteSeq → Option (List Wasm.Syntax.Instr × ByteSeq)
-  | 0x0B :: rest => .some ([], 0x0B :: rest)
-  | 0x05 :: rest => .some ([], 0x05 :: rest)
-  | seq          => do
-    let ib ← Instr.ofOpcode seq
-    let isb ← listOfOpcode ib.2
-    return (isb.1 ++ [ib.1], isb.2)
+            let is ← Instr.listOfOpcodeAux pos'
+            let e  ← Pseudo.ofOpcode
+            match e with
+            | .wasm_end => return .block bt is e
+            | _         => Bytecode.err
+          | 0x03 =>
+            let bt ← BlockType.ofOpcode
+
+            let bytes ← get
+            let pos' := bytes.length
+            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+            have : List.length bytes < pos := by simp at h; exact h
+
+            let is ← Instr.listOfOpcodeAux pos'
+            let e  ← Pseudo.ofOpcode
+            match e with
+            | .wasm_end => return .loop bt is e
+            | _         => Bytecode.err
+          | 0x04 =>
+            let bt  ← BlockType.ofOpcode
+
+            let bytes ← get
+            let pos' := bytes.length
+            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+            have : List.length bytes < pos := by simp at h; exact h
+
+            let is₁ ← Instr.listOfOpcodeAux pos'
+            let e₁  ← Pseudo.ofOpcode
+            match e₁ with
+            | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
+            | .wasm_else =>
+              let bytes ← get
+              let pos' := bytes.length
+              if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+              have : List.length bytes < pos := by simp at h; exact h
+
+              let is₂ ← Instr.listOfOpcodeAux pos'
+              let e₂  ← Pseudo.ofOpcode
+              match e₂ with
+              | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
+              | _         => Bytecode.err
+          | 0x0C => return .br (← Wasm.Binary.Opcode.ofOpcode)
+          | 0x0D => return .br_if (← Wasm.Binary.Opcode.ofOpcode)
+          | 0x0E => do
+            let t ← Vec.ofOpcode
+            let l ← Wasm.Binary.Opcode.ofOpcode
+            return .br_table t l
+          | 0x0F => return .wasm_return
+          | 0x10 => return .call (← Wasm.Binary.Opcode.ofOpcode)
+          | 0x11 => do
+            let y ← Wasm.Binary.Opcode.ofOpcode
+            let x ← Wasm.Binary.Opcode.ofOpcode
+            return .call_indirect x y
+          | 0x1A => return .drop
+          | 0x1B => return .select .none
+          | 0x1C => return .select (.some (← Vec.ofOpcode).list)
+          | 0xFC => do
+            let v ← Wasm.Binary.Opcode.ofOpcode
+            let x ← Wasm.Binary.Opcode.ofOpcode
+            if v = 13 then return .elem_drop x
+            Bytecode.err
+          | _ => Bytecode.err
+  )
+
+def Instr.listOfOpcodeAux (pos : Nat) : Bytecode (List Wasm.Syntax.Instr) := do
+  match ← get with
+  | 0x0B :: _ => return []
+  | 0x05 :: _ => return []
+  | _  => do
+    let bytes ← get
+    let pos' := bytes.length
+    if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+    have : List.length bytes < pos := by simp at h; exact h
+
+    let i ← Instr.ofOpcodeAux pos'
+
+    let bytes ← get
+    let pos' := bytes.length
+    if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
+    have : List.length bytes < pos := by simp at h; exact h
+
+    let is ← Instr.listOfOpcodeAux pos'
+    return is ++ [i]
 end
+termination_by
+  Instr.ofOpcodeAux p     => p
+  Instr.listOfOpcodeAux p => p
+
+def Instr.ofOpcode : Bytecode Wasm.Syntax.Instr := do
+  let bytes ← get
+  Instr.ofOpcodeAux (bytes.length)
+
 
 instance : Opcode Instr := ⟨Instr.toOpcode, Instr.ofOpcode⟩
 
 
 nonrec def Expr.toOpcode (expr : Expr) : ByteSeq :=
-  Instr.listToOpcode expr.1 ++ Instr.Pseudo.toOpcode expr.2
-nonrec def Expr.ofOpcode (seq : ByteSeq) : Option (Expr × ByteSeq) := do
-  let isb ← Instr.listOfOpcode seq
-  let eb  ← Instr.Pseudo.ofOpcode isb.2
-  match eb.1 with
-  | .wasm_end => return ((isb.1, eb.1), eb.2)
-  | _         => none
+  Instr.listToOpcode expr.1 ++ [Instr.Pseudo.toOpcode expr.2]
+
+nonrec def Expr.ofOpcode : Bytecode Wasm.Syntax.Expr :=
+  Bytecode.err_log "Parsing expression." do
+  let bytes ← get
+  let is ← Instr.listOfOpcodeAux bytes.length
+  let e  ← Instr.Pseudo.ofOpcode
+  match e with
+  | .wasm_end => return (is, e)
+  | _         => Bytecode.err
 
 instance : Opcode Expr := ⟨Expr.toOpcode, Expr.ofOpcode⟩

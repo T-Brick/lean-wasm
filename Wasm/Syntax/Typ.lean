@@ -11,22 +11,22 @@ inductive Num
 | i64
 | f32
 | f64
-deriving DecidableEq, Inhabited
+deriving DecidableEq, Inhabited, Repr
 
 inductive Vec
 | v128
-deriving DecidableEq, Inhabited
+deriving DecidableEq, Inhabited, Repr
 
 inductive Ref
 | func
 | extern
-deriving DecidableEq, Inhabited
+deriving DecidableEq, Inhabited, Repr
 
 inductive Val
 | num : Num → Val
 | vec : Vec → Val
 | ref : Ref → Val
-deriving DecidableEq, Inhabited
+deriving DecidableEq, Inhabited, Repr
 
 @[inline] def Result := Wasm.Vec Val
 deriving DecidableEq, Inhabited
