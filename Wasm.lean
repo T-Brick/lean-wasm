@@ -1,3 +1,4 @@
+import Wasm.AuxDefs
 import Wasm.Util
 import Numbers
 
@@ -27,6 +28,9 @@ import Wasm.Dynamics.Dynamics
 /- WASM Binary Representation -/
 import Wasm.Binary.Opcode
 import Wasm.Binary.Typ
+import Wasm.Binary.Index
+import Wasm.Binary.Instr
+import Wasm.Binary.Module
 
 /- WASM Text Representation (WAT) -/
 import Wasm.Text.Typ

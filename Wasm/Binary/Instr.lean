@@ -714,7 +714,7 @@ mutual
 def Instr.toOpcode : Wasm.Syntax.Instr → ByteSeq
   | .numeric n                => Instr.Numeric.toOpcode n
   | .reference r              => Instr.Reference.toOpcode r
-  -- Parametric => sorry
+  -- Parametric
   | .drop                     => 0x1A :: []
   | .select .none             => 0x1B :: []
   | .select (.some t)         => 0x1C :: List.toOpcode t

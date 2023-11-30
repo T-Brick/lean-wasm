@@ -36,6 +36,10 @@ namespace Bytecode
       | []          => err
     )
 
+@[inline] def len : Bytecode Nat := do
+  let lst ← get
+  return lst.length
+
 @[inline] def readByte : Bytecode Byte := do
   match ← get with
   | b :: bs => set bs; return b
@@ -51,7 +55,6 @@ namespace Bytecode
   match ← get with
   | b :: bs => set (f b :: bs); return b
   | []      => errMsg "Tried modifying byte but stream empty."
-
 
 def or (p₁ p₂ : Bytecode α) : Bytecode α := fun state => do
   match ← p₁ state with
@@ -82,6 +85,7 @@ instance : Opcode Byte := ⟨Byte.toOpcode, Byte.ofOpcode⟩
 instance : Opcode (Unsigned n) := ⟨sorry, sorry⟩
 instance : Opcode (Signed n)   := ⟨sorry, sorry⟩
 instance : Opcode Nat          := ⟨sorry, sorry⟩
+instance : Opcode Wasm.Syntax.Value.Byte := ⟨Byte.toOpcode, Byte.ofOpcode⟩
 instance : Opcode (Wasm.Syntax.Value.FloatN nn) := ⟨sorry, sorry⟩
 
 nonrec def List.toOpcode [Opcode α] (list : List α) : ByteSeq :=

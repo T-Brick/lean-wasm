@@ -54,9 +54,46 @@ def map (f : α → β) (v : Vec α) : Vec β :=
 
 def reverse (v : Vec α) : Vec α := ⟨v.list.reverse, by simp [v.maxLen]⟩
 
-@[inline] def length (v : Vec α) := v.list.length
-@[inline] def get (v : Vec α) (i : Fin v.length) := v.list.get i
-@[inline] def set (v : Vec α) (i : Fin v.length) (x : α) : Vec α :=
+@[inline, simp] def length (v : Vec α) := v.list.length
+@[inline, simp] def get (v : Vec α) (i : Fin v.length) := v.list.get i
+@[inline, simp] def set (v : Vec α) (i : Fin v.length) (x : α) : Vec α :=
   ⟨v.list.set i x, by rw [List.length_set]; exact v.maxLen⟩
+
+@[simp] def tl? (v : Vec α) : Option (Vec α) :=
+  match h : v.list with
+  | [] => .none
+  | x :: xs =>
+    .some ⟨xs, by
+      have := v.maxLen
+      rw [h, List.length, Nat.add_comm] at this
+      exact Nat.lt_add_left this
+    ⟩
+
+@[simp] def tl (v : Vec α) (len : v.length > 0) : Vec α :=
+  match h : v.list with
+  | [] => by simp [length, h] at len
+  | x :: xs =>
+    ⟨xs, by
+      have := v.maxLen
+      rw [h, List.length, Nat.add_comm] at this
+      exact Nat.lt_add_left this
+    ⟩
+
+theorem length_lt_tl_length {v : Vec α} {len : v.length > 0}
+    : v.length > (tl v len).length := by
+  sorry
+
+def join (v : Vec (Vec α)) : Option (Vec α) :=
+  match h₁ : v.list with
+  | []      => .some Vec.nil
+  | x :: xs => do
+    have len : v.length > 0 := by simp [length, h₁]
+    have := length_lt_tl_length (v := v) (len := len)
+
+    let res ← Vec.join (v.tl len)
+    if h₂ : res.length + x.length < Vec.max_length then
+      return Vec.append x res (by simp [Nat.add_comm] at h₂; exact h₂)
+    else none
+termination_by join v => v.length
 
 end Vec
