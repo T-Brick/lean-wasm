@@ -51,6 +51,37 @@ instance [Opcode B] : Opcode (Section N B) :=
   ⟨Section.toOpcode, Section.ofOpcode⟩
 
 
+structure Section.Custom where
+  size : Unsigned32
+  name : Value.Name
+  data : List Byte
+
+abbrev Section.Custom? := Option Section.Custom
+
+-- since we need to know the size to read custom sections, we won't use the
+--   section inductive (rather we embed them together for parsing/output).
+nonrec def Section.Custom.toOpcode (custom : Custom) : ByteSeq :=
+     Wasm.Binary.toOpcode (0 : Byte)
+  ++ Wasm.Binary.toOpcode custom.size
+  ++ Wasm.Binary.toOpcode custom.name
+  ++ (custom.data.map Wasm.Binary.toOpcode).join
+
+nonrec def Section.Custom.ofOpcode : Bytecode Custom :=
+  Bytecode.err_log "Parsing custom section." do
+  let N ← Wasm.Binary.ofOpcode
+  if N ≠ 0 then Bytecode.errMsg "Custom section id mismatch."
+
+  let size : Unsigned32 ← Wasm.Binary.ofOpcode
+  let init ← Bytecode.pos
+  let name ← Wasm.Binary.ofOpcode
+  let datalen := size.toNat - ((← Bytecode.pos) - init)
+  let data ← Bytecode.takeBytes datalen
+  return ⟨size, name, data.toList⟩
+
+instance : Opcode Section.Custom :=
+  ⟨Section.Custom.toOpcode, Section.Custom.ofOpcode⟩
+
+
 abbrev Section.Typ := Section 1 (Vec Typ.Func)
 
 
@@ -367,18 +398,31 @@ nonrec def ofOpcode : Bytecode Module :=
   let _ ← Magic.ofOpcode
   let _ ← Version.ofOpcode
 
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let typesec   : Section.Typ        ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let importsec : Section.Import     ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let funcsec   : Section.Function   ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let tablesec  : Section.Table      ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let memsec    : Section.Memory     ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let globalsec : Section.Global     ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let exportsec : Section.Export     ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let startsec  : Section.Start      ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let elemsec   : Section.Element    ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let datacsec  : Section.Data.Count ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let codesec   : Section.Code       ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let datasec   : Section.Data       ← ofOpcode
+  let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
 
   let n :=
     match funcsec with

@@ -62,6 +62,14 @@ namespace Bytecode
   | b :: bs => set (Bytecode.State.mk (f b :: bs) s.pos); return b
   | []      => errMsg "Tried modifying byte but stream empty."
 
+@[inline] def takeBytes (n : Nat) : Bytecode (Vector Byte n) := do
+  let s ← get
+  let (data, rest) := s.seq.splitAt n
+  if h : data.length = n then
+    set (Bytecode.State.mk rest (s.pos + n));
+    return ⟨data, h⟩
+  else errMsg s!"Tried taking {n} byte(s) but couldn't."
+
 def star (p : Bytecode α) : Bytecode (List α) := fun state => do
   match ← p state with
   | (.ok a, state')  =>
