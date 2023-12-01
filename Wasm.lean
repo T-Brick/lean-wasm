@@ -1,5 +1,5 @@
 import Wasm.AuxDefs
-import Wasm.Util
+import Wasm.Vec
 import Numbers
 
 /- AST Representation of WASM Syntax -/

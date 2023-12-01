@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Value
 import Wasm.Syntax.Typ
@@ -83,28 +83,28 @@ structure Memory where
   -- let data' := mem.data.set pos byte
   -- ⟨mem.type, data', by simp [Vec.set, Vec.length]; exact mem.pagesize⟩
 
-def Memory.write
-    (mem : Memory)
-    (bytes : List Syntax.Value.Byte)
-    (pos : Nat)
-    (h : pos + bytes.length ≤ mem.data.length)
-    : Memory :=
-  match bytes with
-  | .nil       => mem
-  | .cons b bs =>
-    let pos' := ⟨pos, by
-        rw [List.length_cons] at h
-        exact Nat.lt_left_add (Nat.lt_of_succ_le h)
-      ⟩
-    let data' := mem.data.set pos' b
-    let mem' : Memory := ⟨mem.type, data', by
-        simp [Vec.set, Vec.length]; exact mem.pagesize
-      ⟩
-    Memory.write mem' bs (pos + 1) (by
-      simp [List.length_cons, Nat.succ_eq_add_one] at h
-      simp [Nat.add_assoc, Nat.add_comm 1, Vec.set, Vec.length]
-      exact h
-    )
+-- def Memory.write
+    -- (mem : Memory)
+    -- (bytes : List Syntax.Value.Byte)
+    -- (pos : Nat)
+    -- (h : pos + bytes.length ≤ mem.data.length)
+    -- : Memory :=
+  -- match bytes with
+  -- | .nil       => mem
+  -- | .cons b bs =>
+    -- let pos' := ⟨pos, by
+        -- rw [List.length_cons] at h
+        -- exact Nat.lt_left_add (Nat.lt_of_succ_le h)
+      -- ⟩
+    -- let data' := mem.data.set pos' b
+    -- let mem' : Memory := ⟨mem.type, data', by
+        -- simp [Vec.set, Vec.length]; exact mem.pagesize
+      -- ⟩
+    -- Memory.write mem' bs (pos + 1) (by
+      -- simp [List.length_cons, Nat.succ_eq_add_one] at h
+      -- simp [Nat.add_assoc, Nat.add_comm 1, Vec.set, Vec.length]
+      -- exact h
+    -- )
 
 
 structure Global where

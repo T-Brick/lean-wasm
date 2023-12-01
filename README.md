@@ -21,24 +21,17 @@ defined in the [Numbers](https://github.com/T-Brick/Numbers) library.
 
 ## Progress/Todo
 
+Vectors are not implemented or represented. Instructions for floats are
+represented, but the implementation of floats isn't yet.
+
 - [ ] Syntax/Structure
-  - [ ] Values
-    - [x] Bytes
-    - [x] Integers
-    - [ ] Float
-      - Represented by Lean's float
-    - [ ] Vectors
-    - [x] Names
+  - [x] Values
   - [x] Types
-  - [ ] Instructions
-    - [ ] Vectors
-    - [x] All other instructions
+  - [x] Instructions
   - [x] Modules
 - [ ] Statics/Validation
   - [x] Types
-  - [ ] Instructions
-    - [ ] Vectors
-    - [x] All other instructions
+  - [x] Instructions
   - [x] Modules
   - [ ] Type-checker
 - [ ] Dynamics/Execution
@@ -68,11 +61,8 @@ defined in the [Numbers](https://github.com/T-Brick/Numbers) library.
     - [ ] Invocation
   - [ ] Intepreter
 - [ ] Formats
-  - [ ] Binary
-    - [ ] Parsing
-    - [ ] Printing
-    - [ ] Validation
+  - [x] Binary
   - [ ] Text
     - [ ] Parsing
     - [x] Printing
-    - [ ] Validation
+    - [ ] Validation/Transformation

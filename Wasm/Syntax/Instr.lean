@@ -1,7 +1,7 @@
 /- Encoding of defintion WASM's instruction defintion:
     https://webassembly.github.io/spec/core/syntax/instructions.html
 -/
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
 import Wasm.Syntax.Index

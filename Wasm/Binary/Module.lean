@@ -344,21 +344,15 @@ abbrev Section.Data.Count := Section 12 Unsigned32
 
 def Magic.toOpcode : ByteSeq := [0x00, 0x61, 0x73, 0x6D]
 def Magic.ofOpcode : Bytecode Unit := do
-  let s ← get
-  match s.seq with
-  | 0x00 :: 0x61 :: 0x73 :: 0x6D :: rest =>
-    set (Bytecode.State.mk rest (s.pos + 4))
-    return ()
-  | _ => Bytecode.errMsg "Incorrect magic number!"
+  match (← Bytecode.takeBytes 4).toList with
+  | 0x00 :: 0x61 :: 0x73 :: 0x6D :: [] => return ()
+  | res => Bytecode.errMsg s!"Incorrect magic number (got {res})!"
 
 def Version.toOpcode : ByteSeq := [0x01, 0x00, 0x00, 0x00]
 def Version.ofOpcode : Bytecode Unit := do
-  let s ← get
-  match s.seq with
-  | 0x01 :: 0x00 :: 0x00 :: 0x00 :: rest =>
-    set (Bytecode.State.mk rest (s.pos + 4))
-    return ()
-  | _ => Bytecode.errMsg "Incorrect version number!"
+  match (← Bytecode.takeBytes 4).toList with
+  | 0x01 :: 0x00 :: 0x00 :: 0x00 :: [] => return ()
+  | res => Bytecode.errMsg s!"Incorrect version number (got {res})!"
 
 nonrec def toOpcode (mod : Module) : ByteSeq :=
   let typeidx := mod.funcs.map (·.type)

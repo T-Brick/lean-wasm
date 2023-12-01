@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Value
 import Wasm.Dynamics.Instance

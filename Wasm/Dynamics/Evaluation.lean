@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Syntax.Value
 
 namespace Wasm.Dynamics.Evaluation

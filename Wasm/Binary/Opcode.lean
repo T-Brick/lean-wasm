@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Syntax.Value
 import Numbers
 import Mathlib.Data.Vector
@@ -13,9 +13,10 @@ abbrev ByteSeq := List Byte -- maybe change : )
 instance : ToString ByteSeq := ⟨String.concatWith " "⟩
 
 structure Bytecode.State where
-  seq : ByteSeq
-  pos : Nat
-def Bytecode.State.new : ByteSeq → Bytecode.State := (Bytecode.State.mk · 0)
+  seq : ByteArray
+  pos : Fin (seq.size + 1)
+def Bytecode.State.new (seq : ByteArray) : Bytecode.State :=
+  ⟨seq, ⟨0, by simp⟩⟩
 
 structure Bytecode.Error where
   log : List String -- todo maybe change ?
@@ -46,40 +47,48 @@ namespace Bytecode
 
 @[inline] def readByte : Bytecode Byte := do
   let s ← get
-  match s.seq with
-  | b :: bs => set (Bytecode.State.mk bs (s.pos + 1)); return b
-  | []      => errMsg "Tried parsing byte but stream empty."
+  let p := s.pos
+  if h : p.val < s.seq.size then
+    let b := s.seq.get ⟨p.val, h⟩
+    let p' := ⟨p.val + 1, by simp? [*]⟩
+    set (Bytecode.State.mk s.seq p')
+    return b
+  else errMsg "Tried parsing byte but at end of sequence."
 
 @[inline] def peekByte : Bytecode Byte := do
-  match (← get).seq with
-  | b :: _ => return b
-  | []     => errMsg "Tried peeking byte but stream empty."
-
--- returns the old byte
-@[inline] def modifyByte (f : Byte → Byte) : Bytecode Byte := do
   let s ← get
-  match s.seq with
-  | b :: bs => set (Bytecode.State.mk (f b :: bs) s.pos); return b
-  | []      => errMsg "Tried modifying byte but stream empty."
+  let p := s.pos
+  if h : p.val < s.seq.size then return s.seq.get ⟨p.val, h⟩
+  else errMsg "Tried peeking byte but at end of sequence."
+
+#check Nat.add_lt_add_iff_right
+#check Nat.lt_succ_of_lt
 
 @[inline] def takeBytes (n : Nat) : Bytecode (Vector Byte n) := do
   let s ← get
-  let (data, rest) := s.seq.splitAt n
-  if h : data.length = n then
-    set (Bytecode.State.mk rest (s.pos + n));
-    return ⟨data, h⟩
-  else errMsg s!"Tried taking {n} byte(s) but couldn't."
+  let p := s.pos
+  if h₁ : p.val < s.seq.size then
+    let data := ((s.seq.toList.splitAt p).2.splitAt n).1
+    if h : data.length = n then
+      let p' :=
+        if h : p.val + n < s.seq.size
+        then ⟨p.val + n, by exact Nat.lt_succ_of_lt h⟩
+        else ⟨s.seq.size, by simp⟩
+      set (Bytecode.State.mk s.seq p');
+      return ⟨data, h⟩
+    else errMsg s!"Tried taking {n} byte(s) but reached end of sequence."
+  else errMsg s!"Tried taking {n} byte(s) but at end of sequence."
 
 def star (p : Bytecode α) : Bytecode (List α) := fun state => do
   match ← p state with
   | (.ok a, state')  =>
-    if state'.pos < state.pos then
+    if state'.seq.size - state'.pos.val < state.seq.size - state.pos then
       match ← star p state' with
       | (.ok as, state'') => return (.ok (a :: as), state'')
       | (.error _, _)     => return (.ok [a], state')
     else return (.error ⟨["Illegal backtracking in star."]⟩, state')
   | (.error _, _) => return (.ok [], state)
-termination_by star p s => s.pos
+termination_by star p s => s.seq.size - s.pos
 
 def opt (p : Bytecode α) : Bytecode (Option α) := fun state => do
   match ← p state with
@@ -92,7 +101,7 @@ def n (v : Nat) (p : Bytecode α) : Bytecode (Vector α v) := fun state => do
 
   match ← p state with
   | (.ok a, state') =>
-    if state'.pos < state.pos then
+    if state'.pos.val > state.pos then
       match ← n (v - 1) p state' with
       | (.ok as, state'')     =>
         return (.ok (cast (by simp [this]) (Vector.cons a as)), state'')
@@ -138,14 +147,10 @@ nonrec def List.toOpcode [Opcode α] (list : List α) : ByteSeq :=
 nonrec def Vec.toOpcode [Opcode α] (vec : Vec α) : ByteSeq :=
   toOpcode vec.length ++ (vec.list.map toOpcode).join
 
-nonrec def Vec.ofOpcode [Opcode α] : Bytecode (Vec α) := do
+nonrec def Vec.ofOpcode [inst : Opcode α] : Bytecode (Vec α) := do
   let len : Unsigned32 ← ofOpcode
-  let mut vec := Vec.nil
-  for i in [:len.toNat] do
-    let val : α ← ofOpcode
-    vec := Vec.cons val vec (by sorry)
-
-  return vec.reverse
+  let vector ← Bytecode.n len.toNat (inst.ofOpcode)
+  return ⟨vector.toList, by simp [Vec.max_length, Unsigned.toNat]⟩
 
 instance [Opcode α] : Opcode (Vec α) := ⟨Vec.toOpcode, Vec.ofOpcode⟩
 

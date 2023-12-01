@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Binary.Opcode
 import Wasm.Binary.Typ
 import Wasm.Binary.Index
@@ -61,17 +61,18 @@ def Unop.toOpcode32 : Unop → Byte
 def Unop.toOpcode64 (op : Unop) : Byte :=
   Unop.toOpcode32 op + Unop.opcodeBitOffset
 
-def Unop.ofOpcode32 : Bytecode Unop :=
-  Bytecode.err_log "Parsing i32 unop instruction." do
-  match ← Bytecode.readByte with
+def Unop.ofOpcode (conv : Byte → Byte := fun x => x) : Bytecode Unop := do
+  match conv (← Bytecode.readByte) with
   | 0x67 => return .clz
   | 0x68 => return .ctz
   | 0x69 => return .popcnt
   | _    => Bytecode.err
+def Unop.ofOpcode32 : Bytecode Unop :=
+  Bytecode.err_log "Parsing i32 unop instruction." do
+  Unop.ofOpcode
 def Unop.ofOpcode64 : Bytecode Unop :=
   Bytecode.err_replace (fun _ => "Parsing i64 unop instruction.") do
-  let _ ← Bytecode.modifyByte (· - Unop.opcodeBitOffset)
-  return ← Unop.ofOpcode32
+  Unop.ofOpcode (· - Unop.opcodeBitOffset)
 
 
 -- i32 and i64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -96,9 +97,8 @@ def Binop.toOpcode32 : Binop → Byte
 def Binop.toOpcode64 (op : Binop) : Byte :=
   Binop.toOpcode32 op + Binop.opcodeBitOffset
 
-def Binop.ofOpcode32 : Bytecode Binop :=
-  Bytecode.err_log "Parsing i32 binop instruction." do
-  match ← Bytecode.readByte with
+def Binop.ofOpcode (conv : Byte → Byte := fun x => x) : Bytecode Binop := do
+  match conv (← Bytecode.readByte) with
   | 0x6A => return .add
   | 0x6B => return .sub
   | 0x6C => return .mul
@@ -115,10 +115,14 @@ def Binop.ofOpcode32 : Bytecode Binop :=
   | 0x77 => return .rotl
   | 0x78 => return .rotr
   | _    => Bytecode.err
+
+def Binop.ofOpcode32 : Bytecode Binop :=
+  Bytecode.err_log "Parsing i32 binop instruction." do
+  Binop.ofOpcode
+
 def Binop.ofOpcode64 : Bytecode Binop :=
   Bytecode.err_replace (fun _ => "Parsing i64 binop instruction.") do
-  let _ ← Bytecode.modifyByte (· - Binop.opcodeBitOffset)
-  return ← Binop.ofOpcode32
+  Binop.ofOpcode (· - Binop.opcodeBitOffset)
 
 
 def Test.toOpcode32 : Test → Byte | .eqz => 0x45
@@ -153,9 +157,9 @@ def Relation.toOpcode32 : Relation → Byte
 def Relation.toOpcode64 (rel : Relation) : Byte :=
   Relation.toOpcode32 rel + Relation.opcodeBitOffset
 
-def Relation.ofOpcode32 : Bytecode Relation :=
-  Bytecode.err_log "Parsing i32 relation instruction." do
-  match ← Bytecode.readByte with
+def Relation.ofOpcode (conv : Byte → Byte := fun x => x)
+    : Bytecode Relation := do
+  match conv (← Bytecode.readByte) with
   | 0x46 => return .eq
   | 0x47 => return .ne
   | 0x48 => return .lt .s
@@ -167,10 +171,12 @@ def Relation.ofOpcode32 : Bytecode Relation :=
   | 0x4E => return .ge .s
   | 0x4F => return .ge .u
   | _    => Bytecode.err
+def Relation.ofOpcode32 : Bytecode Relation :=
+  Bytecode.err_log "Parsing i32 relation instruction." do
+  Relation.ofOpcode
 def Relation.ofOpcode64 : Bytecode Relation :=
   Bytecode.err_replace (fun _ => "Parsing i64 binop instruction.") do
-  let _ ← Bytecode.modifyByte (· - Relation.opcodeBitOffset)
-  return ← Relation.ofOpcode32
+  Relation.ofOpcode (· - Relation.opcodeBitOffset)
 
 
 nonrec def toOpcode : Integer nn → ByteSeq
@@ -319,9 +325,8 @@ def Unop.toOpcode32 : Unop → Byte
 def Unop.toOpcode64 (op : Unop) : Byte :=
   Unop.toOpcode32 op + Unop.opcodeBitOffset
 
-def Unop.ofOpcode32 : Bytecode Unop :=
-  Bytecode.err_log "Parsing f32 unop instruction." do
-  match ← Bytecode.readByte with
+def Unop.ofOpcode (conv : Byte → Byte := fun x => x) : Bytecode Unop := do
+  match conv (← Bytecode.readByte) with
   | 0x8B => return .abs
   | 0x8C => return .neg
   | 0x91 => return .sqrt
@@ -330,10 +335,12 @@ def Unop.ofOpcode32 : Bytecode Unop :=
   | 0x8F => return .trunc
   | 0x90 => return .nearest
   | _    => Bytecode.err
+def Unop.ofOpcode32 : Bytecode Unop :=
+  Bytecode.err_log "Parsing f32 unop instruction." do
+  Unop.ofOpcode
 def Unop.ofOpcode64 : Bytecode Unop :=
   Bytecode.err_replace (fun _ => "Parsing f64 unop instruction.") do
-  let _ ← Bytecode.modifyByte (· - Unop.opcodeBitOffset)
-  return ← Unop.ofOpcode32
+  return ← Unop.ofOpcode (· - Unop.opcodeBitOffset)
 
 
 -- f32 and f64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -350,9 +357,8 @@ def Binop.toOpcode32 : Binop → Byte
 def Binop.toOpcode64 (op : Binop) : Byte :=
   Binop.toOpcode32 op + Binop.opcodeBitOffset
 
-def Binop.ofOpcode32 : Bytecode Binop :=
-  Bytecode.err_log "Parsing f32 binop instruction." do
-  match ← Bytecode.readByte with
+def Binop.ofOpcode (conv : Byte → Byte := fun x => x) : Bytecode Binop := do
+  match conv (← Bytecode.readByte) with
   | 0x92 => return .add
   | 0x93 => return .sub
   | 0x94 => return .mul
@@ -361,10 +367,13 @@ def Binop.ofOpcode32 : Bytecode Binop :=
   | 0x97 => return .max
   | 0x98 => return .copysign
   | _    => Bytecode.err
+def Binop.ofOpcode32 : Bytecode Binop :=
+  Bytecode.err_log "Parsing f32 binop instruction." do
+  Binop.ofOpcode
+
 def Binop.ofOpcode64 : Bytecode Binop :=
   Bytecode.err_replace (fun _ => "Parsing f64 binop instruction.") do
-  let _ ← Bytecode.modifyByte (· - Binop.opcodeBitOffset)
-  return ← Binop.ofOpcode32
+  Binop.ofOpcode (· - Binop.opcodeBitOffset)
 
 
 -- f32 and f64 have distinct bytecodes, so we need to offset 64bit instrs
@@ -380,9 +389,9 @@ def Relation.toOpcode32 : Relation → Byte
 def Relation.toOpcode64 (rel : Relation) : Byte :=
   Relation.toOpcode32 rel + Relation.opcodeBitOffset
 
-def Relation.ofOpcode32 : Bytecode Relation :=
-  Bytecode.err_log "Parsing f32 relation instruction." do
-  match ← Bytecode.readByte with
+def Relation.ofOpcode (conv : Byte → Byte := fun x => x)
+    : Bytecode Relation := do
+  match conv (← Bytecode.readByte) with
   | 0x5B => return .eq
   | 0x5C => return .ne
   | 0x5D => return .lt
@@ -390,10 +399,13 @@ def Relation.ofOpcode32 : Bytecode Relation :=
   | 0x5F => return .le
   | 0x60 => return .ge
   | _    => Bytecode.err
+def Relation.ofOpcode32 : Bytecode Relation :=
+  Bytecode.err_log "Parsing f32 relation instruction." do
+  Relation.ofOpcode
+
 def Relation.ofOpcode64 : Bytecode Relation :=
   Bytecode.err_replace (fun _ => "Parsing f64 relation instruction.") do
-  let _ ← Bytecode.modifyByte (· - Relation.opcodeBitOffset)
-  return ← Relation.ofOpcode32
+  Relation.ofOpcode (· - Relation.opcodeBitOffset)
 
 nonrec def toOpcode : Float nn → ByteSeq
   | .const v         =>
@@ -874,7 +886,7 @@ termination_by
   Instr.listOfOpcodeAux m p => m - p
 
 def Instr.ofOpcode : Bytecode Wasm.Syntax.Instr := do
-  Instr.ofOpcodeAux (← get).seq.length (← Bytecode.pos)
+  Instr.ofOpcodeAux (← get).seq.size (← Bytecode.pos)
 
 
 instance : Opcode Instr := ⟨Instr.toOpcode, Instr.ofOpcode⟩
@@ -885,7 +897,7 @@ nonrec def Expr.toOpcode (expr : Expr) : ByteSeq :=
 
 nonrec def Expr.ofOpcode : Bytecode Wasm.Syntax.Expr :=
   Bytecode.err_log "Parsing expression." do
-  let is ← Instr.listOfOpcodeAux (← get).seq.length (← Bytecode.pos)
+  let is ← Instr.listOfOpcodeAux (← get).seq.size (← Bytecode.pos)
   let e  ← Instr.Pseudo.ofOpcode
   match e with
   | .wasm_end => return (is, e)

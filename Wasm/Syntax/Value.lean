@@ -1,7 +1,7 @@
 /- Encoding of defintion WASM's value defintion:
     https://webassembly.github.io/spec/core/syntax/values.html
 -/
-import Wasm.Util
+import Wasm.Vec
 import Numbers
 open Numbers
 

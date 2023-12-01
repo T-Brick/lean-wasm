@@ -1,4 +1,4 @@
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Syntax.Instr
 import Wasm.Syntax.Typ
 import Wasm.Dynamics.Address

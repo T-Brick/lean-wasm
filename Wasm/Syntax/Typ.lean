@@ -1,7 +1,7 @@
 /- Encoding of defintion WASM's type defintion:
     https://webassembly.github.io/spec/core/syntax/types.html
 -/
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Binary.Opcode
 
 namespace Wasm.Syntax.Typ

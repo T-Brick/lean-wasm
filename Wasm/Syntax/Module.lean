@@ -1,7 +1,7 @@
 /- Encoding of defintion WASM's module defintion:
     https://webassembly.github.io/spec/core/syntax/instructions.html
 -/
-import Wasm.Util
+import Wasm.Vec
 import Wasm.Syntax.Index
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
