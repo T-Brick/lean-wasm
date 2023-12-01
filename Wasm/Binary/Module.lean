@@ -11,6 +11,22 @@ inductive Section (N : Byte) (B : Type) [Opcode B]
 | empty
 | data : (size : Unsigned32) → (cont : B) → Section N B
 
+def Section.mk [Opcode B] (N : Byte) (b : B) : Section N B :=
+  let size := Unsigned.ofNat (toOpcode b).length
+  .data size b
+
+def Section.mk_opt [Opcode B] (N : Byte) : Option B → Section N B
+  | .none   => .empty
+  | .some b => Section.mk N b
+
+def Section.toVec [Opcode B] : Section N (Vec B) → Vec B
+  | .empty       => Vec.nil
+  | .data _ cont => cont
+
+def Section.toOption [Opcode B] : Section N B → Option B
+  | .empty       => .none
+  | .data _ cont => .some cont
+
 nonrec def Section.toOpcode [Opcode B] : Section N B → ByteSeq
   | .empty          => []
   | .data size cont => N :: toOpcode size ++ toOpcode cont
@@ -33,15 +49,6 @@ nonrec def Section.ofOpcode [Opcode B] : Bytecode (Section N B) := do
 
 instance [Opcode B] : Opcode (Section N B) :=
   ⟨Section.toOpcode, Section.ofOpcode⟩
-
-def Section.toVec [Opcode B] : Section N (Vec B) → Vec B
-  | .empty       => Vec.nil
-  | .data _ cont => cont
-
-def Section.toOption [Opcode B] : Section N B → Option B
-  | .empty       => .none
-  | .data _ cont => .some cont
-
 
 
 abbrev Section.Typ := Section 1 (Vec Typ.Func)
@@ -322,10 +329,37 @@ def Version.ofOpcode : Bytecode Unit := do
     return ()
   | _ => Bytecode.errMsg "Incorrect version number!"
 
-nonrec def toOpcode (mod : Module) :=
-     Magic.toOpcode
-  ++ Version.toOpcode
-  ++ sorry
+nonrec def toOpcode (mod : Module) : ByteSeq :=
+  let typeidx := mod.funcs.map (·.type)
+  let code    := mod.funcs.map (fun f => Code.mk ⟨f.locals, f.body⟩)
+  let m       := Unsigned.ofNat mod.datas.length
+
+  let typesec   : Section.Typ        := Section.mk      1 mod.types
+  let importsec : Section.Import     := Section.mk      2 mod.imports
+  let funcsec   : Section.Function   := Section.mk      3 typeidx
+  let tablesec  : Section.Table      := Section.mk      4 mod.tables
+  let memsec    : Section.Memory     := Section.mk      5 mod.mems
+  let globalsec : Section.Global     := Section.mk      6 mod.globals
+  let exportsec : Section.Export     := Section.mk      7 mod.exports
+  let startsec  : Section.Start      := Section.mk_opt  8 mod.start
+  let elemsec   : Section.Element    := Section.mk      9 mod.elems
+  let codesec   : Section.Code       := Section.mk     10 code
+  let datasec   : Section.Data       := Section.mk     11 mod.datas
+  let datacsec  : Section.Data.Count := Section.mk     12 m
+
+  (Magic.toOpcode) ++ (Version.toOpcode)
+  ++ (toOpcode typesec  )
+  ++ (toOpcode importsec)
+  ++ (toOpcode funcsec  )
+  ++ (toOpcode tablesec )
+  ++ (toOpcode memsec   )
+  ++ (toOpcode globalsec)
+  ++ (toOpcode exportsec)
+  ++ (toOpcode startsec )
+  ++ (toOpcode elemsec  )
+  ++ (toOpcode datacsec )
+  ++ (toOpcode codesec  )
+  ++ (toOpcode datasec  )
 
 -- todo Custom sections
 nonrec def ofOpcode : Bytecode Module :=
@@ -405,3 +439,5 @@ nonrec def ofOpcode : Bytecode Module :=
     , exports := exportsec.toVec
     }
   )
+
+instance : Opcode Module := ⟨toOpcode, ofOpcode⟩
