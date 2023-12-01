@@ -16,23 +16,35 @@ nonrec def Section.toOpcode [Opcode B] : Section N B → ByteSeq
   | .data size cont => N :: toOpcode size ++ toOpcode cont
 
 nonrec def Section.ofOpcode [Opcode B] : Bytecode (Section N B) := do
-  let n ← Bytecode.readByte
-  if N = n then
-    let size : Unsigned32 ← ofOpcode
-    let init : Unsigned32 := Unsigned.ofNat (← get).length
-    let cont : B ← ofOpcode
-    let after : Unsigned32 := Unsigned.ofNat (← get).length
-    if size = init - after then
-      return .data size cont
-    Bytecode.errMsg s!"Tried parsing section {N} with size {size} but got {init - after}"
-  Bytecode.errMsg s!"Tried parsing section {N} but got id {n}"
+  match ← Bytecode.opt do
+    let n ← Bytecode.readByte
+    if N = n then
+      let size : Unsigned32 ← ofOpcode
+      let init ← Bytecode.pos
+      let cont : B ← ofOpcode
+      let after ← Bytecode.pos
+      if size = Unsigned.ofNat (after - init) then
+        return .data size cont
+      Bytecode.err
+    Bytecode.err
+  with
+  | .none   => return .empty
+  | .some s => return s
 
 instance [Opcode B] : Opcode (Section N B) :=
   ⟨Section.toOpcode, Section.ofOpcode⟩
 
+def Section.toVec [Opcode B] : Section N (Vec B) → Vec B
+  | .empty       => Vec.nil
+  | .data _ cont => cont
+
+def Section.toOption [Opcode B] : Section N B → Option B
+  | .empty       => .none
+  | .data _ cont => .some cont
 
 
-def Section.Typ := Section 1 (Vec Typ.Func)
+
+abbrev Section.Typ := Section 1 (Vec Typ.Func)
 
 
 nonrec def Import.Description.toOpcode : Import.Description → ByteSeq
@@ -65,10 +77,10 @@ nonrec def Import.ofOpcode : Bytecode Import :=
 
 instance : Opcode Import := ⟨Import.toOpcode, Import.ofOpcode⟩
 
-def Section.Import := Section 2 (Vec Wasm.Syntax.Module.Import)
+abbrev Section.Import := Section 2 (Vec Wasm.Syntax.Module.Import)
 
 
-def Section.Function := Section 3 (Vec Index.Typ)
+abbrev Section.Function := Section 3 (Vec Index.Typ)
 
 
 nonrec def Table.toOpcode (tt : Table) : ByteSeq := toOpcode tt.type
@@ -77,7 +89,7 @@ nonrec def Table.ofOpcode : Bytecode Table :=
   return Table.mk (← ofOpcode)
 instance : Opcode Table := ⟨Table.toOpcode, Table.ofOpcode⟩
 
-def Section.Table := Section 4 (Vec Wasm.Syntax.Module.Table)
+abbrev Section.Table := Section 4 (Vec Wasm.Syntax.Module.Table)
 
 
 nonrec def Memory.toOpcode (mt : Memory) : ByteSeq := toOpcode mt.type
@@ -86,7 +98,7 @@ nonrec def Memory.ofOpcode : Bytecode Memory :=
   return Memory.mk (← ofOpcode)
 instance : Opcode Memory := ⟨Memory.toOpcode, Memory.ofOpcode⟩
 
-def Section.Memory := Section 5 (Vec Wasm.Syntax.Module.Memory)
+abbrev Section.Memory := Section 5 (Vec Wasm.Syntax.Module.Memory)
 
 
 nonrec def Global.toOpcode (gt : Global) : ByteSeq :=
@@ -98,7 +110,7 @@ nonrec def Global.ofOpcode : Bytecode Global :=
   return ⟨type, expr⟩
 instance : Opcode Global := ⟨Global.toOpcode, Global.ofOpcode⟩
 
-def Section.Global := Section 6 (Vec Wasm.Syntax.Module.Global)
+abbrev Section.Global := Section 6 (Vec Wasm.Syntax.Module.Global)
 
 
 nonrec def Export.Description.toOpcode : Export.Description → ByteSeq
@@ -127,7 +139,7 @@ nonrec def Export.ofOpcode : Bytecode Export :=
   return ⟨name, desc⟩
 instance : Opcode Export := ⟨Export.toOpcode, Export.ofOpcode⟩
 
-def Section.Export := Section 7 (Vec Wasm.Syntax.Module.Export)
+abbrev Section.Export := Section 7 (Vec Wasm.Syntax.Module.Export)
 
 
 nonrec def Start.toOpcode (st : Start) : ByteSeq := toOpcode st.func
@@ -136,7 +148,7 @@ nonrec def Start.ofOpcode : Bytecode Start :=
   return Start.mk (← ofOpcode)
 instance : Opcode Start := ⟨Start.toOpcode, Start.ofOpcode⟩
 
-def Section.Start := Section 8 Wasm.Syntax.Module.Start
+abbrev Section.Start := Section 8 Wasm.Syntax.Module.Start
 
 
 
@@ -205,21 +217,29 @@ nonrec def Element.ofOpcode : Bytecode Element :=
 
 instance : Opcode Element := ⟨Element.toOpcode, Element.ofOpcode⟩
 
-def Section.Element := Section 9 Wasm.Syntax.Module.Element
+abbrev Section.Element := Section 9 (Vec Wasm.Syntax.Module.Element)
 
 
-structure Code.Locals where
-  locals : Vec Typ.Val
+abbrev Code.Locals := Vec Typ.Val
 structure Code.Func where
-  locals : Vec Code.Locals
+  locals : Code.Locals
   expr   : Expr
 structure Code where
   -- size : Unsigned32
   code : Code.Func
 
-def Code.Locals.toOpcode : Code.Locals → ByteSeq := Vec.toOpcode ∘ locals
+def Code.dataidx (c : Code) : List Index.Data :=
+  let (ins, _) := c.code.expr
+  ins.filterMap (fun i =>
+    match i with
+    | .memory (.init x)      => .some x
+    | .memory (.data_drop x) => .some x
+    | _ => .none
+  )
+
+def Code.Locals.toOpcode : Code.Locals → ByteSeq := Vec.toOpcode
 def Code.Locals.ofOpcode : Bytecode Code.Locals :=
-  Bytecode.err_log "Parsing code locals." do return ⟨← Vec.ofOpcode⟩
+  Bytecode.err_log "Parsing code locals." do Vec.ofOpcode
 instance : Opcode (Code.Locals) := ⟨Code.Locals.toOpcode, Code.Locals.ofOpcode⟩
 
 nonrec def Code.Funcs.toOpcode (funcs : Code.Func) : ByteSeq :=
@@ -242,15 +262,15 @@ nonrec def Code.toOpcode (code : Code) : ByteSeq :=
 nonrec def Code.ofOpcode : Bytecode Code :=
   Bytecode.err_log "Parsing code section." do
   let size : Unsigned32 ← ofOpcode
-  let init ← Bytecode.len
+  let init ← Bytecode.pos
   let code ← Code.Funcs.ofOpcode
-  let after ← Bytecode.len
-  if size = (Unsigned.ofNat init) - (Unsigned.ofNat after) then return ⟨code⟩
+  let after ← Bytecode.pos
+  if size = Unsigned.ofNat (after - init) then return ⟨code⟩
   Bytecode.err
 
 instance : Opcode Code := ⟨Code.toOpcode, Code.ofOpcode⟩
 
-nonrec def Section.Code := Section 10 Code
+nonrec abbrev Section.Code := Section 10 (Vec Code)
 
 
 nonrec def Data.toOpcode (data : Data) : ByteSeq :=
@@ -280,20 +300,26 @@ nonrec def Data.ofOpcode : Bytecode Data :=
 
 instance : Opcode Data := ⟨Data.toOpcode, Data.ofOpcode⟩
 
-def Section.Data := Section 11 Wasm.Syntax.Module.Data
-def Section.Data.Count := Section 12 Unsigned32
+abbrev Section.Data := Section 11 (Vec Wasm.Syntax.Module.Data)
+abbrev Section.Data.Count := Section 12 Unsigned32
 
 
 def Magic.toOpcode : ByteSeq := [0x00, 0x61, 0x73, 0x6D]
 def Magic.ofOpcode : Bytecode Unit := do
-  match ← get with
-  | 0x00 :: 0x61 :: 0x73 :: 0x6D :: rest => set rest; return ()
+  let s ← get
+  match s.seq with
+  | 0x00 :: 0x61 :: 0x73 :: 0x6D :: rest =>
+    set (Bytecode.State.mk rest (s.pos + 4))
+    return ()
   | _ => Bytecode.errMsg "Incorrect magic number!"
 
 def Version.toOpcode : ByteSeq := [0x01, 0x00, 0x00, 0x00]
 def Version.ofOpcode : Bytecode Unit := do
-  match ← get with
-  | 0x01 :: 0x00 :: 0x00 :: 0x00 :: rest => set rest; return ()
+  let s ← get
+  match s.seq with
+  | 0x01 :: 0x00 :: 0x00 :: 0x00 :: rest =>
+    set (Bytecode.State.mk rest (s.pos + 4))
+    return ()
   | _ => Bytecode.errMsg "Incorrect version number!"
 
 nonrec def toOpcode (mod : Module) :=
@@ -301,20 +327,81 @@ nonrec def toOpcode (mod : Module) :=
   ++ Version.toOpcode
   ++ sorry
 
+-- todo Custom sections
 nonrec def ofOpcode : Bytecode Module :=
   Bytecode.err_log "Parsing WASM module." do
   let _ ← Magic.ofOpcode
   let _ ← Version.ofOpcode
+
+  let typesec   : Section.Typ        ← ofOpcode
+  let importsec : Section.Import     ← ofOpcode
+  let funcsec   : Section.Function   ← ofOpcode
+  let tablesec  : Section.Table      ← ofOpcode
+  let memsec    : Section.Memory     ← ofOpcode
+  let globalsec : Section.Global     ← ofOpcode
+  let exportsec : Section.Export     ← ofOpcode
+  let startsec  : Section.Start      ← ofOpcode
+  let elemsec   : Section.Element    ← ofOpcode
+  let datacsec  : Section.Data.Count ← ofOpcode
+  let codesec   : Section.Code       ← ofOpcode
+  let datasec   : Section.Data       ← ofOpcode
+
+  let n :=
+    match funcsec with
+    | .data _ cont => cont.length
+    | .empty       => 0
+  if n_ge_max : n ≥ Vec.max_length then
+    Bytecode.errMsg "Function section exceed max vector len." else
+  have n_lt_max : n < Vec.max_length := by simp at n_ge_max; exact n_ge_max
+
+  let n' :=
+    match codesec with
+    | .data _ cont => cont.length
+    | .empty       => 0
+  if neq_nn' : n ≠ n' then
+    Bytecode.errMsg "Function/Code section length mismatch." else
+  have eq_nn' : n = n' := by simp at neq_nn'; exact neq_nn'
+
+  let _ ←
+    match datacsec with
+    | .data _ m =>
+      if m ≠ Unsigned.ofNat datasec.toVec.length then
+        Bytecode.errMsg "Data/Datacount section mismatch."
+    | .empty =>
+      if (codesec.toVec.list.map (Code.dataidx)).join.length ≠ 0 then
+        Bytecode.errMsg "Data/Datacount section mismatch."
+
+  let funcs : Vector Module.Function n := Vector.ofFn (fun (i : Fin n) =>
+      match fs : funcsec with
+      | .data _ typeidx =>
+        match cs : codesec with
+        | .data _ vcode =>
+          let code := vcode.get (cast (by simp [eq_nn', cs]) i)
+
+          ⟨ typeidx.get (cast (by simp [Vec.length, fs]) i)
+          , code.code.locals
+          , code.code.expr
+          ⟩
+        | .empty => by
+          simp [eq_nn', n', cs] at i
+          have := i.isLt
+          contradiction
+      | .empty => by
+        simp [n, fs] at i
+        have := i.isLt
+        contradiction
+    )
+
   return (
-    { types   := sorry
-    , funcs   := sorry
-    , tables  := sorry
-    , mems    := sorry
-    , globals := sorry
-    , elems   := sorry
-    , datas   := sorry
-    , start   := sorry
-    , imports := sorry
-    , exports := sorry
+    { types   := typesec.toVec
+    , funcs   := ⟨funcs.val, by rw [funcs.prop]; exact n_lt_max⟩
+    , tables  := tablesec.toVec
+    , mems    := memsec.toVec
+    , globals := globalsec.toVec
+    , elems   := elemsec.toVec
+    , datas   := datasec.toVec
+    , start   := startsec.toOption
+    , imports := importsec.toVec
+    , exports := exportsec.toVec
     }
   )

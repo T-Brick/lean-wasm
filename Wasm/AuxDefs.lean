@@ -35,3 +35,9 @@ theorem List.length_ofFn {f : Fin n → α} : List.length (List.ofFn f) = n := b
 
 def String.concatWith [ToString α] (str : String) (list : List α) : String :=
   String.intercalate str (list.map toString)
+
+@[simp] def Nat.sub_lt_sub {k m n : Nat} (h₁ : n < k) (h₂ : k ≤ m)
+    : m - k < m - n := by
+  apply Or.elim (Nat.le_iff_lt_or_eq.mp h₂) <;> intro h₂
+  . exact Nat.sub_lt_sub_left (Nat.lt_trans h₁ h₂) h₁
+  . simp [*] at *; exact h₁

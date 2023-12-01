@@ -1,5 +1,3 @@
-import Std
-import Mathlib.Data.List.Basic
 import Wasm.AuxDefs
 
 namespace Wasm

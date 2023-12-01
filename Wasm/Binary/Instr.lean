@@ -758,7 +758,7 @@ termination_by
   Instr.listToOpcode is => sizeOf is
 
 mutual
-private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
+private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
   Bytecode.err_log "Parsing instruction." do
       (return (Instr.numeric (nn := .double)) (← Numeric.ofOpcode))
   <|> (return (Instr.numeric (nn := .quad  )) (← Numeric.ofOpcode))
@@ -773,12 +773,13 @@ private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
           | 0x02 =>
             let bt ← BlockType.ofOpcode
 
-            let bytes ← get
-            let pos' := bytes.length
-            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-            have : List.length bytes < pos := by simp at h; exact h
+            let pos' ← Bytecode.pos
+            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+            have : max - pos' < max - pos := by
+              simp at *; exact Nat.sub_lt_sub h h'
 
-            let is ← Instr.listOfOpcodeAux pos'
+            let is ← Instr.listOfOpcodeAux max pos'
             let e  ← Pseudo.ofOpcode
             match e with
             | .wasm_end => return .block bt is e
@@ -786,12 +787,13 @@ private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
           | 0x03 =>
             let bt ← BlockType.ofOpcode
 
-            let bytes ← get
-            let pos' := bytes.length
-            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-            have : List.length bytes < pos := by simp at h; exact h
+            let pos' ← Bytecode.pos
+            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+            have : max - pos' < max - pos := by
+              simp at *; exact Nat.sub_lt_sub h h'
 
-            let is ← Instr.listOfOpcodeAux pos'
+            let is ← Instr.listOfOpcodeAux max pos'
             let e  ← Pseudo.ofOpcode
             match e with
             | .wasm_end => return .loop bt is e
@@ -799,22 +801,24 @@ private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
           | 0x04 =>
             let bt  ← BlockType.ofOpcode
 
-            let bytes ← get
-            let pos' := bytes.length
-            if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-            have : List.length bytes < pos := by simp at h; exact h
+            let pos' ← Bytecode.pos
+            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+            have : max - pos' < max - pos := by
+              simp at *; exact Nat.sub_lt_sub h h'
 
-            let is₁ ← Instr.listOfOpcodeAux pos'
+            let is₁ ← Instr.listOfOpcodeAux max pos'
             let e₁  ← Pseudo.ofOpcode
             match e₁ with
             | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
             | .wasm_else =>
-              let bytes ← get
-              let pos' := bytes.length
-              if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-              have : List.length bytes < pos := by simp at h; exact h
+              let pos' ← Bytecode.pos
+              if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+              if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+              have : max - pos' < max - pos := by
+                simp at *; exact Nat.sub_lt_sub h h'
 
-              let is₂ ← Instr.listOfOpcodeAux pos'
+              let is₂ ← Instr.listOfOpcodeAux max pos'
               let e₂  ← Pseudo.ofOpcode
               match e₂ with
               | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
@@ -842,33 +846,35 @@ private def Instr.ofOpcodeAux (pos : Nat) : Bytecode Wasm.Syntax.Instr :=
           | _ => Bytecode.err
   )
 
-def Instr.listOfOpcodeAux (pos : Nat) : Bytecode (List Wasm.Syntax.Instr) := do
-  match ← get with
-  | 0x0B :: _ => return []
-  | 0x05 :: _ => return []
+def Instr.listOfOpcodeAux (max pos : Nat)
+    : Bytecode (List Wasm.Syntax.Instr) := do
+  match ← Bytecode.peekByte with
+  | 0x0B => return []
+  | 0x05 => return []
   | _  => do
-    let bytes ← get
-    let pos' := bytes.length
-    if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-    have : List.length bytes < pos := by simp at h; exact h
+    let pos' ← Bytecode.pos
+    if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+    if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+    have : max - pos' < max - pos := by
+      simp at *; exact Nat.sub_lt_sub h h'
 
-    let i ← Instr.ofOpcodeAux pos'
+    let i ← Instr.ofOpcodeAux max pos'
 
-    let bytes ← get
-    let pos' := bytes.length
-    if h : pos' ≥ pos then Bytecode.errMsg "Illegal backtracking." else
-    have : List.length bytes < pos := by simp at h; exact h
+    let pos' ← Bytecode.pos
+    if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
+    if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+    have : max - pos' < max - pos := by
+      simp at *; exact Nat.sub_lt_sub h h'
 
-    let is ← Instr.listOfOpcodeAux pos'
+    let is ← Instr.listOfOpcodeAux max pos'
     return is ++ [i]
 end
 termination_by
-  Instr.ofOpcodeAux p     => p
-  Instr.listOfOpcodeAux p => p
+  Instr.ofOpcodeAux m p     => m - p
+  Instr.listOfOpcodeAux m p => m - p
 
 def Instr.ofOpcode : Bytecode Wasm.Syntax.Instr := do
-  let bytes ← get
-  Instr.ofOpcodeAux (bytes.length)
+  Instr.ofOpcodeAux (← get).seq.length (← Bytecode.pos)
 
 
 instance : Opcode Instr := ⟨Instr.toOpcode, Instr.ofOpcode⟩
@@ -879,8 +885,7 @@ nonrec def Expr.toOpcode (expr : Expr) : ByteSeq :=
 
 nonrec def Expr.ofOpcode : Bytecode Wasm.Syntax.Expr :=
   Bytecode.err_log "Parsing expression." do
-  let bytes ← get
-  let is ← Instr.listOfOpcodeAux bytes.length
+  let is ← Instr.listOfOpcodeAux (← get).seq.length (← Bytecode.pos)
   let e  ← Instr.Pseudo.ofOpcode
   match e with
   | .wasm_end => return (is, e)

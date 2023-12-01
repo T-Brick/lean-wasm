@@ -1,6 +1,7 @@
 import Wasm.Util
 import Wasm.Syntax.Value
 import Numbers
+import Mathlib.Data.Vector
 open Numbers
 
 namespace Wasm.Binary
@@ -11,12 +12,17 @@ abbrev ByteSeq := List Byte -- maybe change : )
 
 instance : ToString ByteSeq := ⟨String.concatWith " "⟩
 
+structure Bytecode.State where
+  seq : ByteSeq
+  pos : Nat
+def Bytecode.State.new : ByteSeq → Bytecode.State := (Bytecode.State.mk · 0)
+
 structure Bytecode.Error where
   log : List String -- todo maybe change ?
 instance : ToString Bytecode.Error :=
   ⟨fun err => String.intercalate "\n" err.log.reverse⟩
 
-abbrev Bytecode := ExceptT (Bytecode.Error) (StateM ByteSeq)
+abbrev Bytecode := ExceptT (Bytecode.Error) (StateM Bytecode.State)
 
 instance : Monad Bytecode := show Monad (ExceptT _ _) from inferInstance
 
@@ -36,30 +42,60 @@ namespace Bytecode
       | []          => err
     )
 
-@[inline] def len : Bytecode Nat := do
-  let lst ← get
-  return lst.length
+@[inline] def pos : Bytecode Nat := do return (← get).pos
 
 @[inline] def readByte : Bytecode Byte := do
-  match ← get with
-  | b :: bs => set bs; return b
+  let s ← get
+  match s.seq with
+  | b :: bs => set (Bytecode.State.mk bs (s.pos + 1)); return b
   | []      => errMsg "Tried parsing byte but stream empty."
 
 @[inline] def peekByte : Bytecode Byte := do
-  match ← get with
+  match (← get).seq with
   | b :: _ => return b
-  | []      => errMsg "Tried peeking byte but stream empty."
+  | []     => errMsg "Tried peeking byte but stream empty."
 
 -- returns the old byte
 @[inline] def modifyByte (f : Byte → Byte) : Bytecode Byte := do
-  match ← get with
-  | b :: bs => set (f b :: bs); return b
+  let s ← get
+  match s.seq with
+  | b :: bs => set (Bytecode.State.mk (f b :: bs) s.pos); return b
   | []      => errMsg "Tried modifying byte but stream empty."
+
+def star (p : Bytecode α) : Bytecode (List α) := fun state => do
+  match ← p state with
+  | (.ok a, state')  =>
+    if state'.pos < state.pos then
+      match ← star p state' with
+      | (.ok as, state'') => return (.ok (a :: as), state'')
+      | (.error _, _)     => return (.ok [a], state')
+    else return (.error ⟨["Illegal backtracking in star."]⟩, state')
+  | (.error _, _) => return (.ok [], state)
+termination_by star p s => s.pos
+
+def opt (p : Bytecode α) : Bytecode (Option α) := fun state => do
+  match ← p state with
+  | (.ok a    , state') => return (.ok (.some a), state')
+  | (.error _, _)       => return (.ok .none, state)
+
+def n (v : Nat) (p : Bytecode α) : Bytecode (Vector α v) := fun state => do
+  if h : v = 0 then return (.ok ⟨[], by simp [*]⟩, state) else
+  have : Nat.succ (v - 1) = v := Nat.succ_pred h
+
+  match ← p state with
+  | (.ok a, state') =>
+    if state'.pos < state.pos then
+      match ← n (v - 1) p state' with
+      | (.ok as, state'')     =>
+        return (.ok (cast (by simp [this]) (Vector.cons a as)), state'')
+      | (.error err, state'') => return (.error err, state'')
+    else return (.error ⟨["Illegal backtracking in n."]⟩, state')
+  | (.error err, state') => return (.error err, state')
 
 def or (p₁ p₂ : Bytecode α) : Bytecode α := fun state => do
   match ← p₁ state with
-  | (.ok a   , state') => return (.ok a, state')
-  | (.error _e, _state') =>
+  | (.ok a    , state') => return (.ok a, state')
+  | (.error _, _)       =>
     match ← p₂ state with
     | (.ok a   , state') => return (.ok a, state')
     | (.error e, state') => return (.error e, state')

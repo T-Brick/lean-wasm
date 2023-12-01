@@ -9,13 +9,13 @@ namespace Wasm.Binary.Typ
 
 open Wasm.Syntax.Typ
 
-def Num.toOpcode : Num → Byte
+def Num.toOpcode : Syntax.Typ.Num → Byte
   | .i32 => 0x7F
   | .i64 => 0x7E
   | .f32 => 0x7D
   | .f64 => 0x7C
 
-def Num.ofOpcode : Bytecode Num := do
+def Num.ofOpcode : Bytecode Syntax.Typ.Num := do
   match ← Bytecode.readByte with
   | 0x7F => return .i32
   | 0x7E => return .i64
@@ -23,7 +23,7 @@ def Num.ofOpcode : Bytecode Num := do
   | 0x7C => return .f64
   | _    => Bytecode.errMsg "Parsing numtype."
 
-instance : Opcode Num := ⟨Byte.toSeq ∘ Num.toOpcode, Num.ofOpcode⟩
+instance : Opcode Syntax.Typ.Num := ⟨Byte.toSeq ∘ Num.toOpcode, Num.ofOpcode⟩
 
 
 def Vec.toOpcode : Syntax.Typ.Vec → UInt8
