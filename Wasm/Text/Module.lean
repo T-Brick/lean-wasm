@@ -2,6 +2,7 @@ import Wasm.Text.Context
 import Wasm.Text.Index
 import Wasm.Text.Typ
 import Wasm.Text.Instr
+import Wasm.Syntax.Module
 
 namespace Wasm.Text.Module
 
@@ -10,11 +11,19 @@ inductive Import.Description
 | table : Option Ident → Syntax.Typ.Table  → Description
 | mem   : Option Ident → Syntax.Typ.Mem    → Description
 | globl : Option Ident → Syntax.Typ.Global → Description
+instance : Coe (Syntax.Module.Import.Description) Import.Description :=
+  ⟨ fun | .func  i => .func  .none (.type_ind i)
+        | .table t => .table .none t
+        | .mem   m => .mem   .none m
+        | .globl g => .globl .none g
+  ⟩
 
 structure Import where
   module : Name
   name   : Name
   desc   : Import.Description
+instance : Coe (Syntax.Module.Import) Import :=
+  ⟨ fun imp => ⟨imp.module, imp.name, imp.desc⟩ ⟩
 
 structure Local where
   lbl : Option Ident
@@ -25,52 +34,88 @@ structure Function where
   typeuse : Typeuse
   locals : List Local
   body : List Instr
+instance : Coe (Syntax.Module.Function) Function :=
+  ⟨ fun f => ⟨ .none
+             , .type_ind f.type
+             , f.locals.list.map (⟨.none, .⟩)
+             , f.body.1
+             ⟩
+  ⟩
 
 structure Table where
   lbl : Option Ident
   type : Syntax.Typ.Table
+instance : Coe (Syntax.Module.Table) Table :=
+  ⟨ fun tab => ⟨.none, tab.type⟩ ⟩
 
 structure Memory where
   lbl : Option Ident
   type : Syntax.Typ.Mem
+instance : Coe (Syntax.Module.Memory) Memory :=
+  ⟨ fun mem => ⟨.none, mem.type⟩ ⟩
 
 structure Global where
   lbl : Option Ident
   type : Syntax.Typ.Global
   init : Expr
+instance : Coe (Syntax.Module.Global) Global :=
+  ⟨ fun g => ⟨.none, g.type, g.init.1⟩ ⟩
 
 inductive Export.Description
 | func  : Index.Function → Description
 | table : Index.Table    → Description
 | mem   : Index.Memory   → Description
 | globl : Index.Global   → Description
+instance : Coe (Syntax.Module.Export.Description) Export.Description :=
+  ⟨ fun | .func  i => .func  i
+        | .table t => .table t
+        | .mem   m => .mem   m
+        | .globl g => .globl g
+  ⟩
 
 structure Export where
   name : Name
   desc : Export.Description
+instance : Coe (Syntax.Module.Export) Export :=
+  ⟨ fun exp => ⟨exp.name, exp.desc⟩ ⟩
 
 structure Start where
   func : Index.Function
+instance : Coe (Syntax.Module.Start) Start :=
+  ⟨ fun start => ⟨start.func⟩ ⟩
 
 inductive Element.Mode
 | passive
 | active : (table : Index.Table) → (offset : Expr) → Mode
 | declarative
+instance : Coe (Syntax.Module.Element.Mode) Element.Mode :=
+  ⟨ fun | .passive     => .passive
+        | .active t e  => .active t e.1
+        | .declarative => .declarative
+  ⟩
 
 structure Element where
   lbl  : Option Ident
   type : Syntax.Typ.Ref
   init : Vec Expr
   mode : Element.Mode
+instance : Coe (Syntax.Module.Element) Element :=
+  ⟨ fun elem => ⟨ .none, elem.type, elem.init.map (·.1), elem.mode⟩ ⟩
 
 inductive Data.Mode
 | passive
 | active : (memory : Index.Memory) → (offset : Expr) → Mode
+instance : Coe (Syntax.Module.Data.Mode) Data.Mode :=
+  ⟨ fun | .passive    => .passive
+        | .active m e => .active m e.1
+  ⟩
 
 structure Data where
   lbl  : Option Ident
-  init : Vec String
+  init : Vec Wasm.Syntax.Value.Byte -- todo maybe change fix?
   mode : Data.Mode
+instance : Coe (Syntax.Module.Data) Data :=
+  ⟨ fun data => ⟨.none, data.init, data.mode⟩ ⟩
 
 end Module
 
@@ -89,6 +134,19 @@ inductive Module.Field
 structure Module where
   lbl : Option Ident
   fields : List Module.Field
+instance : Coe (Syntax.Module) Module :=
+  ⟨ fun mod => Module.mk .none
+      <| (mod.types.list.map   (Module.Field.types  ))
+      ++ (mod.funcs.list.map   (Module.Field.funcs  ))
+      ++ (mod.tables.list.map  (Module.Field.tables ))
+      ++ (mod.mems.list.map    (Module.Field.mems   ))
+      ++ (mod.globals.list.map (Module.Field.globals))
+      ++ (mod.elems.list.map   (Module.Field.elems  ))
+      ++ (mod.datas.list.map   (Module.Field.datas  ))
+      ++ (mod.imports.list.map (Module.Field.imports))
+      ++ (mod.exports.list.map (Module.Field.exports))
+      ++ (match mod.start with | .some s => [Module.Field.start s] | _ => [])
+  ⟩
 
 
 namespace Module
@@ -165,15 +223,15 @@ def Data.Mode.toString : Data.Mode → String
   | .active i e => s!"(memory {i}) (offset {e})"
 instance : ToString Data.Mode := ⟨Data.Mode.toString⟩
 
-def Data.toString (data : Data) : String :=
-  s!"(data {data.lbl} {data.mode} {data.init})"
+def Data.toString (data : Data) : String := -- todo fix init
+  s!"(data {data.lbl} {data.mode} {data.init.map (UInt8.toNat)})"
 instance : ToString Data := ⟨Data.toString⟩
 instance : ToString (List Data) := ⟨String.intercalate "\n" ∘ List.map toString⟩
 
 end Module
 
 nonrec def Module.Field.toString : Module.Field → String
-  | .types ty   => toString ty
+  | .types ty   => s!"(type {toString ty})"
   | .funcs fn   => toString fn
   | .tables ta  => toString ta
   | .mems me    => toString me

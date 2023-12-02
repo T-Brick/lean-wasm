@@ -4,6 +4,7 @@ import Wasm.Binary.Typ
 import Wasm.Binary.Index
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Instr
+import Wasm.Text.Instr
 import Numbers
 open Numbers
 
@@ -786,55 +787,67 @@ private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
             let bt ← BlockType.ofOpcode
 
             let pos' ← Bytecode.pos
-            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
-            have : max - pos' < max - pos := by
-              simp at *; exact Nat.sub_lt_sub h h'
+            if h : pos' ≤ pos
+            then Bytecode.errMsg "Illegal backtracking in block."
+            else if h' :  pos' > max
+            then Bytecode.errMsg "Exceeded maximum in block."
+            else
+              have : max - pos' < max - pos := by
+                simp at *; exact Nat.sub_lt_sub h h'
 
-            let is ← Instr.listOfOpcodeAux max pos'
-            let e  ← Pseudo.ofOpcode
-            match e with
-            | .wasm_end => return .block bt is e
-            | _         => Bytecode.err
+              let is ← Instr.listOfOpcodeAux max pos'
+              let e  ← Pseudo.ofOpcode
+              match e with
+              | .wasm_end => return .block bt is e
+              | _         => Bytecode.errMsg "Expected `end` to finish block."
           | 0x03 =>
             let bt ← BlockType.ofOpcode
 
             let pos' ← Bytecode.pos
-            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
-            have : max - pos' < max - pos := by
-              simp at *; exact Nat.sub_lt_sub h h'
+            if h : pos' ≤ pos
+            then Bytecode.errMsg "Illegal backtracking in loop."
+            else if h' :  pos' > max
+            then Bytecode.errMsg "Exceeded maximum in block."
+            else
+              have : max - pos' < max - pos := by
+                simp at *; exact Nat.sub_lt_sub h h'
 
-            let is ← Instr.listOfOpcodeAux max pos'
-            let e  ← Pseudo.ofOpcode
-            match e with
-            | .wasm_end => return .loop bt is e
-            | _         => Bytecode.err
+              let is ← Instr.listOfOpcodeAux max pos'
+              let e  ← Pseudo.ofOpcode
+              match e with
+              | .wasm_end => return .loop bt is e
+              | _         => Bytecode.errMsg "Expected `end` to finish loop."
           | 0x04 =>
             let bt  ← BlockType.ofOpcode
 
             let pos' ← Bytecode.pos
-            if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-            if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
-            have : max - pos' < max - pos := by
-              simp at *; exact Nat.sub_lt_sub h h'
-
-            let is₁ ← Instr.listOfOpcodeAux max pos'
-            let e₁  ← Pseudo.ofOpcode
-            match e₁ with
-            | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
-            | .wasm_else =>
-              let pos' ← Bytecode.pos
-              if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-              if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
+            if h : pos' ≤ pos
+            then Bytecode.errMsg "Illegal backtracking in if."
+            else if h' :  pos' > max
+            then Bytecode.errMsg "Exceeded maximum in if."
+            else
               have : max - pos' < max - pos := by
                 simp at *; exact Nat.sub_lt_sub h h'
 
-              let is₂ ← Instr.listOfOpcodeAux max pos'
-              let e₂  ← Pseudo.ofOpcode
-              match e₂ with
-              | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
-              | _         => Bytecode.err
+              let is₁ ← Instr.listOfOpcodeAux max pos'
+              let e₁  ← Pseudo.ofOpcode
+              match e₁ with
+              | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
+              | .wasm_else =>
+                let pos' ← Bytecode.pos
+                if h : pos' ≤ pos
+                then Bytecode.errMsg "Illegal backtracking in else."
+                else if h' :  pos' > max
+                then Bytecode.errMsg "Exceeded maximum in else."
+                else
+                  have : max - pos' < max - pos := by
+                    simp at *; exact Nat.sub_lt_sub h h'
+
+                  let is₂ ← Instr.listOfOpcodeAux max pos'
+                  let e₂  ← Pseudo.ofOpcode
+                  match e₂ with
+                  | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
+                  | _         => Bytecode.errMsg "Expected `end` to finish if."
           | 0x0C => return .br (← Wasm.Binary.Opcode.ofOpcode)
           | 0x0D => return .br_if (← Wasm.Binary.Opcode.ofOpcode)
           | 0x0E => do
@@ -860,26 +873,29 @@ private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
 
 def Instr.listOfOpcodeAux (max pos : Nat)
     : Bytecode (List Wasm.Syntax.Instr) := do
+  Bytecode.err_log "Parsing instruction list." do
   match ← Bytecode.peekByte with
   | 0x0B => return []
   | 0x05 => return []
-  | _  => do
-    let pos' ← Bytecode.pos
-    if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-    if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
-    have : max - pos' < max - pos := by
-      simp at *; exact Nat.sub_lt_sub h h'
+  | _    => do
+    if h' :  pos ≥ max
+    then Bytecode.errMsg "Exceeded maximum in instr in list."
+    else
+      have : max - (pos + 1) < max - pos := by
+        simp at *; exact Nat.sub_lt_sub_left h' (by simp)
+      let i ← Instr.ofOpcodeAux max (pos + 1)
 
-    let i ← Instr.ofOpcodeAux max pos'
+      let pos' ← Bytecode.pos
+      if h : pos' ≤ pos
+      then Bytecode.errMsg "Illegal backtracking in instr list."
+      else if h' :  pos' > max
+      then Bytecode.errMsg "Exceeded maximum in instr list."
+      else
+        have : max - pos' < max - pos := by
+          simp at *; exact Nat.sub_lt_sub h h'
 
-    let pos' ← Bytecode.pos
-    if h : pos' ≤ pos then Bytecode.errMsg "Illegal backtracking" else
-    if h' :  pos' > max then Bytecode.errMsg "Exceeded maximum" else
-    have : max - pos' < max - pos := by
-      simp at *; exact Nat.sub_lt_sub h h'
-
-    let is ← Instr.listOfOpcodeAux max pos'
-    return is ++ [i]
+        let is ← Instr.listOfOpcodeAux max pos'
+        return i :: is
 end
 termination_by
   Instr.ofOpcodeAux m p     => m - p

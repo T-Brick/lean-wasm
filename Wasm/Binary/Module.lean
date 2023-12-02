@@ -32,20 +32,20 @@ nonrec def Section.toOpcode [Opcode B] : Section N B → ByteSeq
   | .data size cont => N :: toOpcode size ++ toOpcode cont
 
 nonrec def Section.ofOpcode [Opcode B] : Bytecode (Section N B) := do
-  match ← Bytecode.opt do
-    let n ← Bytecode.readByte
+  if ¬(← Bytecode.at_end) then
+    let n ← Bytecode.peekByte
     if N = n then
+      let _ ← Bytecode.readByte -- correct section id
       let size : Unsigned32 ← ofOpcode
+      Bytecode.err_log s!"Parsing section id={N} size={size}." do
       let init ← Bytecode.pos
       let cont : B ← ofOpcode
       let after ← Bytecode.pos
-      if size = Unsigned.ofNat (after - init) then
-        return .data size cont
-      Bytecode.err
-    Bytecode.err
-  with
-  | .none   => return .empty
-  | .some s => return s
+      let rsize := Unsigned.ofNat (after - init)
+      if size = rsize then return Section.data size cont else
+      Bytecode.errMsg s!"Section {N} expected size {size} got {rsize}."
+    else return .empty
+  else return .empty
 
 instance [Opcode B] : Opcode (Section N B) :=
   ⟨Section.toOpcode, Section.ofOpcode⟩
@@ -389,11 +389,12 @@ nonrec def toOpcode (mod : Module) : ByteSeq :=
 -- todo Custom sections
 nonrec def ofOpcode : Bytecode Module :=
   Bytecode.err_log "Parsing WASM module." do
-  let _ ← Magic.ofOpcode
-  let _ ← Version.ofOpcode
+  let () ← Magic.ofOpcode
+  let () ← Version.ofOpcode
+  let () ← Bytecode.log "Magic + Version valid"
 
   let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
-  let typesec   : Section.Typ        ← ofOpcode
+  let typesec   : Section.Typ        ← Section.ofOpcode
   let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
   let importsec : Section.Import     ← ofOpcode
   let _c        : Section.Custom?    ← Bytecode.opt ofOpcode
