@@ -37,7 +37,7 @@ namespace Bytecode
   fun state =>
     ExceptT.adapt (fun err =>
       {err with log := msg :: err.log}
-    ) p {state with log := msg :: state.log}
+    ) p state
 @[inline] def err_replace (f : String → String) : Bytecode α → Bytecode α :=
     ExceptT.adapt (fun err =>
       match err.log with
@@ -115,13 +115,18 @@ def n (v : Nat) (p : Bytecode α) : Bytecode (Vector α v) := fun state => do
     else return (.error ⟨["Illegal backtracking in n."]⟩, state')
   | (.error err, state') => return (.error err, state')
 
+@[inline] def backtrack (p : Bytecode α) : Bytecode α := fun state => do
+  match ← p state with
+  | (.ok a, s')   => return (.ok a, s')
+  | (.error e, _) => return (.error e, state)
+
 def or (p₁ p₂ : Bytecode α) : Bytecode α := fun state => do
   match ← p₁ state with
-  | (.ok a    , state') => return (.ok a, state')
-  | (.error _, _)       =>
+  | (.ok a   , state') => return (.ok a, state')
+  | (.error _, _)      =>
     match ← p₂ state with
     | (.ok a   , state') => return (.ok a, state')
-    | (.error e, state') => return (.error e, state')
+    | (.error e, state') => return (.error e, state)
 
 instance : OrElse (Bytecode α) where
   orElse p q := or p (q ())

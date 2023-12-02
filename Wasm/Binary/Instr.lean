@@ -21,13 +21,13 @@ nonrec def BlockType.toOpcode : BlockType → ByteSeq
 
 nonrec def BlockType.ofOpcode : Bytecode BlockType :=
   Bytecode.err_log "Parsing block type." do
+  match ← Bytecode.peekByte with
+  | 0x40 => let _ ← Bytecode.readByte return .value .none
+  | _    =>
       (do return BlockType.value (.some (← Typ.Val.ofOpcode)))
   <|> (do let x ← ofOpcode (α := Signed33)
           if x ≥ 0 then return .index (Unsigned.ofInt x.toInt)
           else Bytecode.err)
-  <|> match ← Bytecode.readByte with
-      | 0x40 => return .value .none
-      | _    => Bytecode.err
 
 instance : Opcode BlockType := ⟨BlockType.toOpcode, BlockType.ofOpcode⟩
 
@@ -239,12 +239,28 @@ nonrec def toOpcode : Integer nn → ByteSeq
 
 nonrec def ofOpcode : Bytecode (Integer nn) :=
   Bytecode.err_log s!"Parsing i{nn.toBits} instruction." do
-  ( match nn with
-    | .double =>
-          (do return Integer.unop     (← Unop.ofOpcode32    ))
-      <|> (do return Integer.binop    (← Binop.ofOpcode32   ))
-      <|> (do return Integer.test     (← Test.ofOpcode32    ))
-      <|> (do return Integer.relation (← Relation.ofOpcode32))
+  match ← Bytecode.peekByte with
+  | 0x41 =>
+    let _ ← Bytecode.readByte
+    match size_eq : nn with
+    | .double => do
+      let const : (Signed nn.toBits) ← ofOpcode
+      return .const (cast (by rw [size_eq]) const.toUnsignedN)
+    | .quad   => Bytecode.err
+  | 0x42 =>
+    let _ ← Bytecode.readByte
+    match size_eq : nn with
+    | .double => Bytecode.err
+    | .quad   => do
+      let const : Signed nn.toBits ← ofOpcode
+      return .const (cast (by rw [size_eq]) const.toUnsignedN)
+  | _ =>
+    match nn with
+    | .double => do
+          (return Integer.unop     (← Unop.ofOpcode32    ))
+      <|> (return Integer.binop    (← Binop.ofOpcode32   ))
+      <|> (return Integer.test     (← Test.ofOpcode32    ))
+      <|> (return Integer.relation (← Relation.ofOpcode32))
       <|> (do match ← Bytecode.readByte with
               | 0xA7 => return .wrap_i64
               | 0xA8 => return .trunc_f .double .s
@@ -263,11 +279,11 @@ nonrec def ofOpcode : Bytecode (Integer nn) :=
                 Bytecode.err
               | _ => Bytecode.err
           )
-    | .quad   =>
-          (do return Integer.unop     (← Unop.ofOpcode64    ))
-      <|> (do return Integer.binop    (← Binop.ofOpcode64   ))
-      <|> (do return Integer.test     (← Test.ofOpcode64    ))
-      <|> (do return Integer.relation (← Relation.ofOpcode64))
+    | .quad   => do
+          (return Integer.unop     (← Unop.ofOpcode64    ))
+      <|> (return Integer.binop    (← Binop.ofOpcode64   ))
+      <|> (return Integer.test     (← Test.ofOpcode64    ))
+      <|> (return Integer.relation (← Relation.ofOpcode64))
       <|> (do match ← Bytecode.readByte with
               | 0xAC => return .extend_i32 .s
               | 0xAD => return .extend_i32 .u
@@ -288,21 +304,7 @@ nonrec def ofOpcode : Bytecode (Integer nn) :=
                 Bytecode.err
               | _ => Bytecode.err
           )
-  ) <|>
-    match ← Bytecode.readByte with
-    | 0x41 =>
-      match size_eq : nn with
-      | .double => do
-        let const : (Signed nn.toBits) ← ofOpcode
-        return .const (cast (by rw [size_eq]) const.toUnsignedN)
-      | .quad   => Bytecode.err
-    | 0x42 =>
-      match size_eq : nn with
-      | .double => Bytecode.err
-      | .quad   => do
-        let const : Signed nn.toBits ← ofOpcode
-        return .const (cast (by rw [size_eq]) const.toUnsignedN)
-    | _ => Bytecode.err
+
 
 instance : Opcode (Integer nn) := ⟨toOpcode, ofOpcode⟩
 
@@ -439,7 +441,23 @@ nonrec def toOpcode : Float nn → ByteSeq
 
 nonrec def ofOpcode : Bytecode (Float nn) :=
   Bytecode.err_log s!"Parsing f{nn.toBits} instruction." do
-    ( match nn with
+    match ← Bytecode.peekByte with
+    | 0x43 =>
+      let _ ← Bytecode.readByte
+      match _size_eq : nn with
+      | .double =>
+        let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
+        return .const v
+      | .quad   => Bytecode.err
+    | 0x44 =>
+      let _ ← Bytecode.readByte
+      match _size_eq : nn with
+      | .double => Bytecode.err
+      | .quad   =>
+        let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
+        return .const v
+    | _ =>
+      match nn with
       | .double =>
             (return Float.unop     (← Unop.ofOpcode32    ))
         <|> (return Float.binop    (← Binop.ofOpcode32   ))
@@ -466,22 +484,6 @@ nonrec def ofOpcode : Bytecode (Float nn) :=
                 | 0xBF => return .reinterpret_i
                 | _    => Bytecode.err
             )
-    ) <|> (
-      match ← Bytecode.readByte with
-      | 0x43 =>
-        match _size_eq : nn with
-        | .double => do
-          let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
-          return .const v
-        | .quad   => Bytecode.err
-      | 0x44 =>
-        match _size_eq : nn with
-        | .double => Bytecode.err
-        | .quad   => do
-          let v : Wasm.Syntax.Value.FloatN nn.toBits ← ofOpcode
-          return .const v
-      | _ => Bytecode.err
-  )
 
 instance : Opcode (Float nn) := ⟨toOpcode, ofOpcode⟩
 
@@ -680,42 +682,44 @@ nonrec def Memory.toOpcode : Memory → ByteSeq
 
 nonrec def Memory.ofOpcode : Bytecode Memory :=
   Bytecode.err_log "Parsing memory instruction." do
-      (return (Memory.integer (nn := .double)) (← ofOpcode))
-  <|> (return (Memory.integer (nn := .quad  )) (← ofOpcode))
-  <|> (return (Memory.float   (nn := .double)) (← ofOpcode))
-  <|> (return (Memory.float   (nn := .quad  )) (← ofOpcode))
-  <|> ( do match ← Bytecode.readByte with
-        | 0x3F =>
-          match ← Bytecode.readByte with
-          | 0x00 => return .size
-          | _    => Bytecode.err
-        | 0x40 =>
-          match ← Bytecode.readByte with
-          | 0x00 => return .grow
-          | _    => Bytecode.err
-        | 0xFC => do
-          let v ← ofOpcode
-          if v = 11 then
-            match ← Bytecode.readByte with
-            | 0x00 => return .fill
-            | _    => Bytecode.err
-          else if v = 10 then
-            match ← Bytecode.readByte with
-            | 0x00 =>
-              match ← Bytecode.readByte with
-              | 0x00 => return .copy
-              | _    => Bytecode.err
-            | _    => Bytecode.err
-          else if v = 9 then
-            return Memory.data_drop (← ofOpcode)
-          else if v = 8 then
-            let x ← ofOpcode
-            match ← Bytecode.readByte with
-            | 0x00 => return .init x
-            | _    => Bytecode.err
-          else Bytecode.err
-        | _ => Bytecode.err
-  )
+  match ← Bytecode.peekByte with
+  | 0x3F =>
+    let _ ← Bytecode.readByte
+    match ← Bytecode.readByte with
+    | 0x00 => return .size
+    | _    => Bytecode.err
+  | 0x40 =>
+    let _ ← Bytecode.readByte
+    match ← Bytecode.readByte with
+    | 0x00 => return .grow
+    | _    => Bytecode.err
+  | 0xFC => do
+    let _ ← Bytecode.readByte
+    let v ← ofOpcode
+    if v = 11 then
+      match ← Bytecode.readByte with
+      | 0x00 => return .fill
+      | _    => Bytecode.err
+    else if v = 10 then
+      match ← Bytecode.readByte with
+      | 0x00 =>
+        match ← Bytecode.readByte with
+        | 0x00 => return .copy
+        | _    => Bytecode.err
+      | _    => Bytecode.err
+    else if v = 9 then
+      return Memory.data_drop (← ofOpcode)
+    else if v = 8 then
+      let x ← ofOpcode
+      match ← Bytecode.readByte with
+      | 0x00 => return .init x
+      | _    => Bytecode.err
+    else Bytecode.err
+  | _ =>
+        (return (Memory.integer (nn := .double)) (← ofOpcode))
+    <|> (return (Memory.integer (nn := .quad  )) (← ofOpcode))
+    <|> (return (Memory.float   (nn := .double)) (← ofOpcode))
+    <|> (return (Memory.float   (nn := .quad  )) (← ofOpcode))
 
 instance : Opcode Memory := ⟨Memory.toOpcode, Memory.ofOpcode⟩
 
@@ -773,6 +777,109 @@ termination_by
 mutual
 private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
   Bytecode.err_log "Parsing instruction." do
+  match ← Bytecode.peekByte with
+  | 0x00 => let _ ← Bytecode.readByte; return .unreachable
+  | 0x01 => let _ ← Bytecode.readByte; return .nop
+  | 0x02 =>
+    let _ ← Bytecode.readByte
+    let bt ← BlockType.ofOpcode
+
+    let pos' ← Bytecode.pos
+    if h : pos' ≤ pos
+    then Bytecode.errMsg "Illegal backtracking in block."
+    else if h' :  pos' > max
+    then Bytecode.errMsg "Exceeded maximum in block."
+    else
+      have : max - pos' < max - pos := by
+        simp at *; exact Nat.sub_lt_sub h h'
+
+      let is ← Instr.listOfOpcodeAux max pos'
+      let e  ← Pseudo.ofOpcode
+      match e with
+      | .wasm_end => return .block bt is e
+      | _         => Bytecode.errMsg "Expected `end` to finish block."
+  | 0x03 =>
+    let _ ← Bytecode.readByte
+    let bt ← BlockType.ofOpcode
+
+    let pos' ← Bytecode.pos
+    if h : pos' ≤ pos
+    then Bytecode.errMsg "Illegal backtracking in loop."
+    else if h' :  pos' > max
+    then Bytecode.errMsg "Exceeded maximum in block."
+    else
+      have : max - pos' < max - pos := by
+        simp at *; exact Nat.sub_lt_sub h h'
+
+      let is ← Instr.listOfOpcodeAux max pos'
+      let e  ← Pseudo.ofOpcode
+      match e with
+      | .wasm_end => return .loop bt is e
+      | _         => Bytecode.errMsg "Expected `end` to finish loop."
+  | 0x04 =>
+    let _ ← Bytecode.readByte
+    let bt  ← BlockType.ofOpcode
+
+    let pos' ← Bytecode.pos
+    if h : pos' ≤ pos
+    then Bytecode.errMsg "Illegal backtracking in if."
+    else if h' :  pos' > max
+    then Bytecode.errMsg "Exceeded maximum in if."
+    else
+      have : max - pos' < max - pos := by
+        simp at *; exact Nat.sub_lt_sub h h'
+
+      let is₁ ← Instr.listOfOpcodeAux max pos'
+      let e₁  ← Pseudo.ofOpcode
+      match e₁ with
+      | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
+      | .wasm_else =>
+        let pos' ← Bytecode.pos
+        if h : pos' ≤ pos
+        then Bytecode.errMsg "Illegal backtracking in else."
+        else if h' :  pos' > max
+        then Bytecode.errMsg "Exceeded maximum in else."
+        else
+          have : max - pos' < max - pos := by
+            simp at *; exact Nat.sub_lt_sub h h'
+
+          let is₂ ← Instr.listOfOpcodeAux max pos'
+          let e₂  ← Pseudo.ofOpcode
+          match e₂ with
+          | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
+          | _         => Bytecode.errMsg "Expected `end` to finish if."
+  | 0x0C =>
+    let _ ← Bytecode.readByte
+    return .br (← Wasm.Binary.Opcode.ofOpcode)
+  | 0x0D =>
+    let _ ← Bytecode.readByte
+    return .br_if (← Wasm.Binary.Opcode.ofOpcode)
+  | 0x0E =>
+    let _ ← Bytecode.readByte
+    let t ← Vec.ofOpcode
+    let l ← Wasm.Binary.Opcode.ofOpcode
+    return .br_table t l
+  | 0x0F => let _ ← Bytecode.readByte; return .wasm_return
+  | 0x10 =>
+    let _ ← Bytecode.readByte
+    return .call (← Wasm.Binary.Opcode.ofOpcode)
+  | 0x11 =>
+    let _ ← Bytecode.readByte
+    let y ← Wasm.Binary.Opcode.ofOpcode
+    let x ← Wasm.Binary.Opcode.ofOpcode
+    return .call_indirect x y
+  | 0x1A => let _ ← Bytecode.readByte; return .drop
+  | 0x1B => let _ ← Bytecode.readByte; return .select .none
+  | 0x1C =>
+    let _ ← Bytecode.readByte
+    return .select (.some (← Vec.ofOpcode).list)
+  | 0xFC =>
+    let _ ← Bytecode.readByte
+    let v ← Wasm.Binary.Opcode.ofOpcode
+    let x ← Wasm.Binary.Opcode.ofOpcode
+    if v = 13 then return .elem_drop x
+    Bytecode.err
+  | _ =>
       (return (Instr.numeric (nn := .double)) (← Numeric.ofOpcode))
   <|> (return (Instr.numeric (nn := .quad  )) (← Numeric.ofOpcode))
   <|> (return (Instr.reference              ) (← Reference.ofOpcode))
@@ -780,96 +887,6 @@ private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
   <|> (return (Instr.globl                  ) (← Global.ofOpcode))
   <|> (return (Instr.table                  ) (← Table.ofOpcode))
   <|> (return (Instr.memory                 ) (← Memory.ofOpcode))
-  <|> (do match ← Bytecode.readByte with
-          | 0x00 => return .unreachable
-          | 0x01 => return .nop
-          | 0x02 =>
-            let bt ← BlockType.ofOpcode
-
-            let pos' ← Bytecode.pos
-            if h : pos' ≤ pos
-            then Bytecode.errMsg "Illegal backtracking in block."
-            else if h' :  pos' > max
-            then Bytecode.errMsg "Exceeded maximum in block."
-            else
-              have : max - pos' < max - pos := by
-                simp at *; exact Nat.sub_lt_sub h h'
-
-              let is ← Instr.listOfOpcodeAux max pos'
-              let e  ← Pseudo.ofOpcode
-              match e with
-              | .wasm_end => return .block bt is e
-              | _         => Bytecode.errMsg "Expected `end` to finish block."
-          | 0x03 =>
-            let bt ← BlockType.ofOpcode
-
-            let pos' ← Bytecode.pos
-            if h : pos' ≤ pos
-            then Bytecode.errMsg "Illegal backtracking in loop."
-            else if h' :  pos' > max
-            then Bytecode.errMsg "Exceeded maximum in block."
-            else
-              have : max - pos' < max - pos := by
-                simp at *; exact Nat.sub_lt_sub h h'
-
-              let is ← Instr.listOfOpcodeAux max pos'
-              let e  ← Pseudo.ofOpcode
-              match e with
-              | .wasm_end => return .loop bt is e
-              | _         => Bytecode.errMsg "Expected `end` to finish loop."
-          | 0x04 =>
-            let bt  ← BlockType.ofOpcode
-
-            let pos' ← Bytecode.pos
-            if h : pos' ≤ pos
-            then Bytecode.errMsg "Illegal backtracking in if."
-            else if h' :  pos' > max
-            then Bytecode.errMsg "Exceeded maximum in if."
-            else
-              have : max - pos' < max - pos := by
-                simp at *; exact Nat.sub_lt_sub h h'
-
-              let is₁ ← Instr.listOfOpcodeAux max pos'
-              let e₁  ← Pseudo.ofOpcode
-              match e₁ with
-              | .wasm_end  => return .wasm_if bt is₁ .wasm_else [] e₁
-              | .wasm_else =>
-                let pos' ← Bytecode.pos
-                if h : pos' ≤ pos
-                then Bytecode.errMsg "Illegal backtracking in else."
-                else if h' :  pos' > max
-                then Bytecode.errMsg "Exceeded maximum in else."
-                else
-                  have : max - pos' < max - pos := by
-                    simp at *; exact Nat.sub_lt_sub h h'
-
-                  let is₂ ← Instr.listOfOpcodeAux max pos'
-                  let e₂  ← Pseudo.ofOpcode
-                  match e₂ with
-                  | .wasm_end => return .wasm_if bt is₁ e₁ is₂ e₂
-                  | _         => Bytecode.errMsg "Expected `end` to finish if."
-          | 0x0C => return .br (← Wasm.Binary.Opcode.ofOpcode)
-          | 0x0D => return .br_if (← Wasm.Binary.Opcode.ofOpcode)
-          | 0x0E => do
-            let t ← Vec.ofOpcode
-            let l ← Wasm.Binary.Opcode.ofOpcode
-            return .br_table t l
-          | 0x0F => return .wasm_return
-          | 0x10 => return .call (← Wasm.Binary.Opcode.ofOpcode)
-          | 0x11 => do
-            let y ← Wasm.Binary.Opcode.ofOpcode
-            let x ← Wasm.Binary.Opcode.ofOpcode
-            return .call_indirect x y
-          | 0x1A => return .drop
-          | 0x1B => return .select .none
-          | 0x1C => return .select (.some (← Vec.ofOpcode).list)
-          | 0xFC => do
-            let v ← Wasm.Binary.Opcode.ofOpcode
-            let x ← Wasm.Binary.Opcode.ofOpcode
-            if v = 13 then return .elem_drop x
-            Bytecode.err
-          | _ => Bytecode.err
-  )
 
 def Instr.listOfOpcodeAux (max pos : Nat)
     : Bytecode (List Wasm.Syntax.Instr) := do
@@ -877,13 +894,16 @@ def Instr.listOfOpcodeAux (max pos : Nat)
   match ← Bytecode.peekByte with
   | 0x0B => return []
   | 0x05 => return []
-  | _    => do
+  | _    =>
     if h' :  pos ≥ max
     then Bytecode.errMsg "Exceeded maximum in instr in list."
     else
       have : max - (pos + 1) < max - pos := by
         simp at *; exact Nat.sub_lt_sub_left h' (by simp)
       let i ← Instr.ofOpcodeAux max (pos + 1)
+      let () ← Bytecode.log s!"Parsed: {Wasm.Text.Instr.toString i}"
+      let s ← get
+      -- let () ← Bytecode.log s!"{s.seq.toList.drop s.pos}"
 
       let pos' ← Bytecode.pos
       if h : pos' ≤ pos

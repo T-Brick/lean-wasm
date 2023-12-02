@@ -22,26 +22,26 @@ def run (p : Parsed) : IO UInt32 := do
   let init := Wasm.Binary.Bytecode.State.new contents
 
   match (Wasm.Binary.Module.ofOpcode).run init with
-  -- match (Wasm.Binary.Module.ofOpcode).run state with
-  | (.error e, _) =>
+  | (.error e, s) =>
     IO.println s!"ERROR:\n\n{e}\n---"
+    IO.println s!"{String.intercalate "\n" s.log.reverse}\n"
     return 1
   | (.ok mod, s) =>
-    -- IO.println s!"Successfuly parsed bytecode!\n"
-    IO.println s!"{Wasm.Text.Module.toString mod}"
-    -- let mod' : Wasm.Text.Module := mod
-    -- IO.println s!"POS: {s.pos}"
-    -- IO.println s!"{s.seq.toList.drop s.pos}\n"
-    -- IO.println s!"{String.intercalate "\n" s.log.reverse}"
-    return 0
+    let mod_str := Wasm.Text.Module.toString mod
+    match p.flag? "output" with
+    | .some file =>
+      let output := file.as! String
+      IO.FS.writeFile output mod_str
+    | .none => IO.println mod_str
+
+  return 0
 
 def topCmd : Cmd := `[Cli|
   wasm VIA run; [version]
-  "A verified implementation of WebAssembly"
+  "A verified (WIP) implementation of WebAssembly"
 
   FLAGS:
-    e, emit : String;          "Specify the output format (either WAT or WASM)"
-    i, input  : String;        "Specify the input format (currently only WASM)"
+    -- e, emit : String;          "Specify the output format (either WAT or WASM)"
     o, output : String;        "Specify output file"
 
   ARGS:

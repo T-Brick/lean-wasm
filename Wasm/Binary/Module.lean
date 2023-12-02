@@ -258,13 +258,19 @@ instance : Opcode Element := ⟨Element.toOpcode, Element.ofOpcode⟩
 abbrev Section.Element := Section 9 (Vec Wasm.Syntax.Module.Element)
 
 
-abbrev Code.Locals := Vec Typ.Val
+structure Code.Locals where
+  n : Unsigned32
+  t : Typ.Val
 structure Code.Func where
-  locals : Code.Locals
+  locals : Vec Typ.Val
   expr   : Expr
 structure Code where
   -- size : Unsigned32
   code : Code.Func
+
+def Code.Locals.toVec (locals : Code.Locals) : Vec Typ.Val :=
+  let lst := List.ofFn (fun (_ : Fin locals.n.toNat) => locals.t)
+  ⟨lst, by simp [List.length_ofFn, Vec.max_length, Unsigned.toNat]⟩
 
 def Code.dataidx (c : Code) : List Index.Data :=
   let (ins, _) := c.code.expr
@@ -275,9 +281,13 @@ def Code.dataidx (c : Code) : List Index.Data :=
     | _ => .none
   )
 
-def Code.Locals.toOpcode : Code.Locals → ByteSeq := Vec.toOpcode
-def Code.Locals.ofOpcode : Bytecode Code.Locals :=
-  Bytecode.err_log "Parsing code locals." do Vec.ofOpcode
+nonrec def Code.Locals.toOpcode (locals : Code.Locals) : ByteSeq :=
+  toOpcode locals.n ++ toOpcode locals.t
+nonrec def Code.Locals.ofOpcode : Bytecode Code.Locals :=
+  Bytecode.err_log "Parsing code locals." do
+  let n ← ofOpcode
+  let t ← ofOpcode
+  return ⟨n, t⟩
 instance : Opcode (Code.Locals) := ⟨Code.Locals.toOpcode, Code.Locals.ofOpcode⟩
 
 nonrec def Code.Funcs.toOpcode (funcs : Code.Func) : ByteSeq :=
@@ -285,7 +295,7 @@ nonrec def Code.Funcs.toOpcode (funcs : Code.Func) : ByteSeq :=
 nonrec def Code.Funcs.ofOpcode : Bytecode Code.Func :=
   Bytecode.err_log "Parsing code funcs." do
   let t' ← Vec.ofOpcode
-  match Vec.join t' with
+  match Vec.join (t'.map Code.Locals.toVec) with
   | .none => Bytecode.errMsg "Exceeded maximum vector length."
   | .some t =>
     let e ← ofOpcode
@@ -303,8 +313,9 @@ nonrec def Code.ofOpcode : Bytecode Code :=
   let init ← Bytecode.pos
   let code ← Code.Funcs.ofOpcode
   let after ← Bytecode.pos
-  if size = Unsigned.ofNat (after - init) then return ⟨code⟩
-  Bytecode.err
+  let rsize := Unsigned.ofNat (after - init)
+  if size = rsize then return ⟨code⟩
+  Bytecode.errMsg s!"Code section expected size {size} got {rsize}."
 
 instance : Opcode Code := ⟨Code.toOpcode, Code.ofOpcode⟩
 
