@@ -2,10 +2,27 @@
 
 A formalisation of the semantics of WebAssembly in Lean.
 
-This is currently intended to be used in the target of a C0 (C subset) compiler
-also written in Lean. Hence, efforts here will mostly reflect parts of WASM that
-are useful there (i.e. Vector and Float related instructions may lag behind
-the rest of the project).
+This is currently intended to be used in the target of a
+[C0 (C subset) compiler](https://github.com/T-Brick/c0deine) also written in
+Lean. Hence, efforts here will mostly reflect parts of WASM that are useful
+there (i.e. Vector and Float related instructions may lag behind the rest of the project).
+
+## Usage
+
+Currently only WASM (binary files) can be converted into WAT (wasm text format).
+Although, no checks will be performed beyond parsing (i.e. no typechecking,
+etc.).
+
+First, use `lake build` to compile the project.
+
+Then you can run the following:
+```
+build/bin/wasm file.wasm
+build/bin/wasm --output file.wat file.wasm
+```
+The first line will print the corresponding WAT program to the terminal. The
+second writes it to the file `file.wat`. If any error occurs an error message
+will be printed (for both commands).
 
 ## Project Organisation/Structure
 
