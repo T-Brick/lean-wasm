@@ -153,7 +153,7 @@ nonrec def Unsigned.ofLEB128 (n : { i // 0 < i }) : Bytecode (Unsigned n) := do
   | .some (v, rem) =>
     let dp := init - rem.length
     let pos' :=
-      if h : s.pos + dp ≥ s.seq.size
+      if h : s.pos.val + dp ≥ s.seq.size
       then ⟨s.seq.size, by simp⟩
       else ⟨s.pos + dp, by rw [not_le] at h; exact Nat.lt_add_right _ _ 1 h⟩
     set (Bytecode.State.mk s.seq pos' s.log)
@@ -168,7 +168,7 @@ nonrec def Signed.ofLEB128 (n : { i // 0 < i }) : Bytecode (Signed n) := do
   | .some (v, rem) =>
     let dp := init - rem.length
     let pos' :=
-      if h : s.pos + dp ≥ s.seq.size
+      if h : s.pos.val + dp ≥ s.seq.size
       then ⟨s.seq.size, by simp⟩
       else ⟨s.pos + dp, by rw [not_le] at h; exact Nat.lt_add_right _ _ 1 h⟩
     set (Bytecode.State.mk s.seq pos' s.log)

@@ -1,5 +1,6 @@
 import Std
 import Mathlib.Data.List.Basic
+import Mathlib.Data.List.OfFn
 
 theorem Nat.lt_left_add {a b c : Nat} (h₁ : a + b < c) : a < c := by
   induction b with
@@ -28,9 +29,6 @@ theorem Nat.two_pow_succ_pred : Nat.succ (Nat.pred (2 ^ n)) = 2 ^ n :=
 
 theorem Nat.zero_lt_two_pow {n : Nat} : 0 < 2 ^ n := by
   exact Nat.pos_pow_of_pos n ((Nat.zero_lt_succ 1))
-
-theorem List.length_ofFn {f : Fin n → α} : List.length (List.ofFn f) = n := by
-  simp [List.ofFn]
 
 
 def String.concatWith [ToString α] (str : String) (list : List α) : String :=
