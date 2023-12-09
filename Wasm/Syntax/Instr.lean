@@ -19,16 +19,16 @@ def Size.toBits : Size → {i : Nat // i > 0}
   | double => ⟨32, by simp⟩
   | quad   => ⟨64, by simp⟩
 
-def Size.max_double : Nat := Nat.pow 2 (Size.toBits .double)
-def Size.max_quad   : Nat := Nat.pow 2 (Size.toBits .quad)
+abbrev Size.max_double : Nat := Nat.pow 2 (Size.toBits .double)
+abbrev Size.max_quad   : Nat := Nat.pow 2 (Size.toBits .quad)
 def Size.max_val : Size → Nat
   | double => Size.max_double
   | quad   => Size.max_quad
 
 theorem Size.max_val_gt_zero : Size.max_val n > 0 := by
   cases n with
-  | double => simp
-  | quad   => simp
+  | double => simp [Size.max_val]
+  | quad   => simp [Size.max_val]
 
 def Size.toBytes : Size → Nat
   | double => 4

@@ -1,23 +1,11 @@
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
+import Wasm.Text.Ident
 
 namespace Wasm.Text
 
-abbrev Name := Wasm.Syntax.Value.Name
-instance : ToString Name := ⟨fun name => s!"\"{name.value}\""⟩
-
-def Ident.validChar (c : Char) : Bool :=
-  c.isAlphanum || "!#$%'*+-./:<=>?@\\^_`|~".any (· = c)
-
-structure Ident where
-  name : String
-  name_nonempty : name ≠ ""
-  name_valid_chars : name.all Ident.validChar
-deriving DecidableEq
-instance : ToString Ident := ⟨(s!"${·.name}")⟩
-instance : ToString (Option Ident) := ⟨(·.map toString |>.getD "")⟩
-
 namespace Ident
+
 structure Context where
   types     : List (Option Ident)
   funcs     : List (Option Ident)
@@ -55,3 +43,24 @@ def Context.empty : Context :=
 
 theorem Context.Wellformed.empty : Context.Wellformed Context.empty := by
   intro l₁ l₂; simp [Context.empty]; intro l₁_nil l₂_nil; simp [*]
+
+def Context.append (r₁ r₂ : Context) : Context :=
+  { types    := r₁.types    ++ r₂.types
+  , funcs    := r₁.funcs    ++ r₂.funcs
+  , tables   := r₁.tables   ++ r₂.tables
+  , mems     := r₁.mems     ++ r₂.mems
+  , globals  := r₁.globals  ++ r₂.globals
+  , elem     := r₁.elem     ++ r₂.elem
+  , data     := r₁.data     ++ r₂.data
+  , locals   := r₁.locals   ++ r₂.locals
+  , labels   := r₁.labels   ++ r₂.labels
+  , typedefs := r₁.typedefs ++ r₂.typedefs
+  }
+
+end Ident
+
+
+
+-- abbrev Trans := ExceptT (Bytecode.Error) (StateM Ident.Context)
+
+-- instance : Monad Bytecode := show Monad (ExceptT _ _) from inferInstance

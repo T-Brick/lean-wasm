@@ -1,27 +1,20 @@
-import Wasm.Text.Context
 import Wasm.Text.Typ
+import Wasm.Text.Ident
+import Wasm.Text.Translate
 import Wasm.Syntax.Index
 import Numbers
 open Numbers
 
 namespace Wasm.Text.Module
 
-inductive Index.Valid (get : Ident.Context → Unsigned32 → Option Ident)
-  : (I : Ident.Context) → Unsigned32 → Type
-where
-| num  : (x : Unsigned32) → Index.Valid get I x
-| name : (v : Ident) → (get I x = .some v) → Index.Valid get I x
-
 inductive Index
 | num  : (x : Unsigned32) → Index
 | name : (v : Ident) → Index
-
 
 nonrec def Index.toString : Index → String
   | .num x  => toString x
   | .name v => toString v
 instance : ToString Index := ⟨Index.toString⟩
-
 
 namespace Index
 
@@ -35,17 +28,52 @@ namespace Index
 @[inline] def Local     := Index
 @[inline] def Label     := Index
 
-@[inline] def Typ.Valid       := Index.Valid (·.types.get? ·.toNat |>.join)
-@[inline] def Function.Valid  := Index.Valid (·.funcs.get? ·.toNat |>.join)
-@[inline] def Table.Valid     := Index.Valid (·.tables.get? ·.toNat |>.join)
-@[inline] def Memory.Valid    := Index.Valid (·.mems.get? ·.toNat |>.join)
-@[inline] def Global.Valid    := Index.Valid (·.globals.get? ·.toNat |>.join)
-@[inline] def Element.Valid   := Index.Valid (·.elem.get? ·.toNat |>.join)
-@[inline] def Data.Valid      := Index.Valid (·.data.get? ·.toNat |>.join)
-@[inline] def Local.Valid     := Index.Valid (·.locals.get? ·.toNat |>.join)
-@[inline] def Label.Valid     := Index.Valid (·.labels.get? ·.toNat |>.join)
+@[inline] def Typ.trans (I : Ident.Context)
+    : Typ → Option Wasm.Syntax.Module.Index.Typ
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
 
-instance : ToString Typ       :=⟨Index.toString⟩
+@[inline] def Function.trans (I : Ident.Context)
+    : Function → Option Wasm.Syntax.Module.Index.Function
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Table.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Table
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Memory.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Memory
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Global.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Global
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Element.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Element
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Data.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Data
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Local.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Local
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+@[inline] def Label.trans (I : Ident.Context)
+    : Table → Option Wasm.Syntax.Module.Index.Label
+  | .num x  => .some x
+  | .name v => (I.types.indexOf? (.some v)).map Unsigned.ofNat
+
+instance : ToString Typ       := ⟨Index.toString⟩
 instance : ToString Function  := ⟨Index.toString⟩
 instance : ToString Table     := ⟨Index.toString⟩
 instance : ToString Memory    := ⟨Index.toString⟩

@@ -16,8 +16,8 @@ namespace Vec
 nonrec def toString [ToString α] (v : Vec α) : String :=
   String.intercalate " " (v.list.map toString)
 
-def nil : Vec α := ⟨[], by simp⟩
-def single : α → Vec α := (⟨[·], by simp⟩)
+def nil : Vec α := ⟨[], by simp [max_length]⟩
+def single : α → Vec α := (⟨[·], by simp [max_length]⟩)
 
 instance : Coe (Vec α) (List α)          := ⟨fun v => v.list⟩
 instance : Inhabited (Vec α)             := ⟨nil⟩
@@ -66,7 +66,7 @@ def reverse (v : Vec α) : Vec α := ⟨v.list.reverse, by simp [v.maxLen]⟩
     .some ⟨xs, by
       have := v.maxLen
       rw [h, List.length, Nat.add_comm] at this
-      exact Nat.lt_add_left this
+      linarith
     ⟩
 
 @[simp] def tl (v : Vec α) (len : v.length > 0) : Vec α :=
@@ -76,7 +76,7 @@ def reverse (v : Vec α) : Vec α := ⟨v.list.reverse, by simp [v.maxLen]⟩
     ⟨xs, by
       have := v.maxLen
       rw [h, List.length, Nat.add_comm] at this
-      exact Nat.lt_add_left this
+      linarith
     ⟩
 
 theorem length_lt_tl_length {v : Vec α} {len : v.length > 0}

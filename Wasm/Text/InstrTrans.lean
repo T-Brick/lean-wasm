@@ -9,33 +9,26 @@ import Wasm.Syntax.Instr
 import Wasm.Text.Typ
 import Wasm.Text.Context
 import Wasm.Text.Index
+import Wasm.Text.Instr
 
 namespace Wasm.Text
 
-open Text.Module
+open Wasm.Text.Module Wasm.Text.Instr
 
-inductive Label : (I : Ident.Context) → Ident.Context → Type
-| new
-    : (v : Ident)
-    → (.some v) ∉ I.labels
-    → Label I {I with labels := .some v :: I.labels}
-| shadow
-    : (v : Ident)
-    → I.labels.get i = .some v
-    → Label I {I with labels := .some v :: (I.labels.set i.val .none)}
-| no_label : Label I {I with labels := .none :: I.labels}
+def Label.trans (I : Ident.Context) : Option Ident → Ident.Context
+  | .some v =>
+    match I.labels.indexOf? (.some v) with
+    | .none   => { I with labels := .some v :: I.labels }
+    | .some i => { I with labels := .some v :: I.labels.set i .none }
+  | .none   => { I with labels := .none :: I.labels }
 
 namespace Instr
 
-inductive Reference (I : Ident.Context)
-| null : Typ.Heap → Reference I
-| is_null
-| func : Index.Function I → Reference I
-instance : Coe (Syntax.Instr.Reference) (Reference I) :=
-  ⟨ fun | .null t  => .null t
-        | .is_null => .is_null
-        | .func i => .func i
-  ⟩
+def Reference.trans (I : Ident.Context)
+    : Instr.Reference → Option Syntax.Instr.Reference
+  | .null t  => return .null t
+  | .is_null => return .is_null
+  | .func x  => return .func (←(Index.Func.trans x))
 
 inductive Local (I : Ident.Context)
 | get : Index.Local I → Local I
@@ -133,6 +126,7 @@ inductive Instr.Block : (I : Ident.Context) → Type
     : Label I I'
     → Instr.BlockType I
     → Instr.List I'
+    → Syntax.Instr.Pseudo
     → Option Ident
     → Instr.Block I
 | loop

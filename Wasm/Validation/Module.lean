@@ -21,7 +21,7 @@ inductive Function : (Γ : Context) → Function → Typ.Func → Prop
 | function : {h : t1.length + t.list.length < Vec.max_length}
            → Γ.types.list.get x = ⟨t1, t2⟩
            → Expr {Γ with locals := Vec.append t1 t h
-                        , labels := ⟨[t2], by simp⟩
+                        , labels := ⟨[t2], by simp [Vec.max_length]⟩
                         , wasm_return := .some t2
                         } expr t2
            → Function Γ ⟨Vec.index Γ.types x, t, expr⟩ ⟨t1, t2⟩
@@ -105,7 +105,7 @@ def Function.Index.Instrs (expr : List Syntax.Instr)
                           : (res : Vec Index.Function)
                             ×' (res.list.length ≤ expr.length) :=
   match expr with
-  | .nil       => ⟨Vec.nil, by simp⟩
+  | .nil       => ⟨Vec.nil, by simp [Vec.nil, Vec.list]⟩
   | .cons i is =>
     let ⟨v, len⟩ := Function.Index.Instrs is (by rw [List.length_cons] at h₁; apply Nat.lt_left_add h₁)
     match Function.Index.Instr i with
@@ -123,8 +123,8 @@ def Function.Index.List (globals : List Syntax.Instr)
                         (len : globals.length + elems.length + exports.length < Vec.max_length)
                         : Vec Index.Function :=
   let ⟨gidx, glen⟩ := Index.Instrs globals (by rw [Nat.add_assoc] at len; apply Nat.lt_left_add len)
-  let ⟨eidx, elen⟩ := Index.Instrs elems (by rw [Nat.add_right_comm] at len; apply Nat.lt_add_left len)
-  let xidx : Vec Index.Function := ⟨exports, by apply Nat.lt_add_left len⟩
+  let ⟨eidx, elen⟩ := Index.Instrs elems (by rw [Nat.add_right_comm] at len; linarith)
+  let xidx : Vec Index.Function := ⟨exports, by linarith⟩
   let gelen := by exact Nat.le_trans_lt (Nat.add_le_add glen elen) (Nat.lt_left_add len)
   let ⟨geidx, gelen⟩ := Vec.length_append gidx eidx gelen
   Vec.append geidx xidx (by
@@ -181,19 +181,19 @@ inductive Module : Module → List Typ.Extern → List Typ.Extern → Prop
               { types       := type
               , funcs       := Vec.append
                                 ⟨Typ.Extern.funcs it, Nat.lt_left_add funcsMax⟩
-                                ⟨ft, Nat.lt_add_left funcsMax⟩
+                                ⟨ft, by linarith⟩
                                 funcsMax
               , tables      := Vec.append
                                 ⟨Typ.Extern.tables it, Nat.lt_left_add tablesMax⟩
-                                ⟨tt, Nat.lt_add_left tablesMax⟩
+                                ⟨tt, by linarith⟩
                                 tablesMax
               , mems        := Vec.append
                                 ⟨Typ.Extern.mems it, Nat.lt_left_add memsMax⟩
-                                ⟨mt', Nat.lt_add_left memsMax⟩
+                                ⟨mt', by linarith⟩
                                 memsMax
               , globals     := Vec.append
                                 ⟨Typ.Extern.globals it, Nat.lt_left_add globalsMax⟩
-                                ⟨gt, Nat.lt_add_left globalsMax⟩
+                                ⟨gt, by linarith⟩
                                 globalsMax
               , elems       := ⟨rt, elemsMax⟩
               , datas       := data.map (fun _ => ())

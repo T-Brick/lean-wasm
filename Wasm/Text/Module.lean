@@ -1,4 +1,3 @@
-import Wasm.Text.Context
 import Wasm.Text.Index
 import Wasm.Text.Typ
 import Wasm.Text.Instr

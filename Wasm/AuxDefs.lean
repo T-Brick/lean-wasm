@@ -1,6 +1,7 @@
 import Std
 import Mathlib.Data.List.Basic
 import Mathlib.Data.List.OfFn
+import Mathlib.Tactic
 
 theorem Nat.lt_left_add {a b c : Nat} (h₁ : a + b < c) : a < c := by
   induction b with
@@ -11,9 +12,9 @@ theorem Nat.lt_left_add {a b c : Nat} (h₁ : a + b < c) : a < c := by
     have h₃ := Nat.lt_of_succ_lt_succ h₂
     apply ih h₃
 
-theorem Nat.lt_add_left {a b c : Nat} (h : a + b < c) : b < c := by
-  rw [Nat.add_comm] at h
-  apply lt_left_add h
+-- theorem Nat.lt_add_left {a b c : Nat} (h : a + b < c) : b < c := by
+  -- rw [Nat.add_comm] at h
+  -- apply lt_left_add h
 
 
 theorem Nat.le_trans_lt {a b c : Nat} (h₁ : a ≤ b) (h₂ : b < c) : a < c := by

@@ -1,0 +1,3 @@
+#!/bin/sh
+# this makes it easier to interface with compilers autograder for testing
+.lake/build/bin/wasm $@

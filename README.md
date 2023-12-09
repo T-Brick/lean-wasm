@@ -17,8 +17,8 @@ First, use `lake build` to compile the project.
 
 Then you can run the following:
 ```
-build/bin/wasm file.wasm
-build/bin/wasm --output file.wat file.wasm
+bin/wasm file.wasm
+bin/wasm --output file.wat file.wasm
 ```
 The first line will print the corresponding WAT program to the terminal. The
 second writes it to the file `file.wat`. If any error occurs an error message

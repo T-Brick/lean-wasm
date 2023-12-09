@@ -4,7 +4,6 @@
 
 import Wasm.Syntax.Instr
 import Wasm.Text.Typ
-import Wasm.Text.Context
 import Wasm.Text.Index
 
 namespace Wasm.Text
@@ -119,14 +118,28 @@ instance : Coe (Syntax.Instr.BlockType) Instr.BlockType :=
 
 mutual
 inductive Instr.Block
-| block : Label → Instr.BlockType → List Instr → Option Ident → Instr.Block
-| loop  : Label → Instr.BlockType → List Instr → Option Ident → Instr.Block
+| block
+    : Label
+    → Instr.BlockType
+    → List Instr
+    → Syntax.Instr.Pseudo
+    → Option Ident
+    → Instr.Block
+| loop
+    : Label
+    → Instr.BlockType
+    → List Instr
+    → Syntax.Instr.Pseudo
+    → Option Ident
+    → Instr.Block
 | wasm_if
     : Label
     → Instr.BlockType
     → (if_body : List Instr)
+    → Syntax.Instr.Pseudo
     → (id₁ : Option Ident)
     → (else_body : List Instr)
+    → Syntax.Instr.Pseudo
     → (id₂ : Option Ident)
     → Instr.Block
 
@@ -149,13 +162,13 @@ def Instr.ofSyntaxInstr : Syntax.Instr → Instr
   | .memory m             => .plain (.memory m)
   | .nop                  => .plain .nop
   | .unreachable          => .plain .unreachable
-  | .block bt is _        =>
-    .block (.block .no_label bt (Instr.ofSyntaxInstrList is) .none)
-  | .loop bt is _         =>
-    .block (.loop .no_label bt (Instr.ofSyntaxInstrList is) .none)
-  | .wasm_if bt ib _ ie _ => .block (
-      .wasm_if .no_label bt (Instr.ofSyntaxInstrList ib) .none
-                            (Instr.ofSyntaxInstrList ie) .none
+  | .block bt is p        =>
+    .block (.block .no_label bt (Instr.ofSyntaxInstrList is) p .none)
+  | .loop bt is p         =>
+    .block (.loop .no_label bt (Instr.ofSyntaxInstrList is) p .none)
+  | .wasm_if bt ib p₁ ie p₂ => .block (
+      .wasm_if .no_label bt (Instr.ofSyntaxInstrList ib) p₁ .none
+                            (Instr.ofSyntaxInstrList ie) p₂ .none
     )
   | .br l                 => .plain (.br l)
   | .br_if l              => .plain (.br_if l)
@@ -402,13 +415,16 @@ instance : ToString BlockType := ⟨BlockType.toString⟩
 mutual
 
 def Block.toString : Instr.Block → String
-  | .block lbl bt ins id =>
+  | .block lbl bt ins p id =>
     let ins := listToString ins |>.replace "\n" "\n  "
     s!"(block {lbl} {bt}\n  {ins}\n)"
-  | .loop lbl bt ins e =>
+  | .loop lbl bt ins p id =>
     let ins := listToString ins |>.replace "\n" "\n  "
     s!"(loop {lbl} {bt}\n  {ins}\n)"
-  | .wasm_if lbl bt ins el ins' e =>
+  | .wasm_if lbl bt ins p₁ el [] p₂ e =>
+    let ins := listToString ins |>.replace "\n" "\n  "
+    s!"(if {lbl} {bt} (then\n  {ins}\n))"
+  | .wasm_if lbl bt ins p₁ el ins' p₂ e =>
     let ins := listToString ins |>.replace "\n" "\n    "
     let ins' := listToString ins' |>.replace "\n" "\n    "
     s!"(if {lbl} {bt}\n  (then\n    {ins}\n  ) (else\n    {ins'}\n  )\n)"
@@ -419,8 +435,9 @@ def toString : Instr → String
   | .comment s => s!"(; {s} ;)"
 
 def listToString : List Instr → String
-  | [] => ""
-  | i :: is => (toString i) ++ "\n" ++ listToString is
+  | []      => ""
+  | i :: [] => toString i
+  | i :: is => toString i ++ "\n" ++ listToString is
 
 end
 termination_by
