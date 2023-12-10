@@ -222,8 +222,21 @@ def Data.Mode.toString : Data.Mode → String
   | .active i e => s!"(memory {i}) (offset {e})"
 instance : ToString Data.Mode := ⟨Data.Mode.toString⟩
 
-def Data.toString (data : Data) : String := -- todo fix init
-  s!"(data {data.lbl} {data.mode} {data.init.map (UInt8.toNat)})"
+def Data.toString (data : Data) : String :=
+  let str := data.init.list.map (fun b =>
+      match b.toNat with
+      | 0x09 => "\\t"
+      | 0x0A => "\\n"
+      | 0x0D => "\\r"
+      | 0x22 => "\\\""
+      | 0x27 => "\\'"
+      | 0x5C => "\\\\"
+      | c =>
+        if c ≥ 0x20 && c < 0x7F
+        then Char.ofNat c |>.toString
+        else s!"\\u\{{c.toHexNumString}}"
+    ) |> String.intercalate ""
+  s!"(data {data.lbl} {data.mode} \"{str}\")"
 instance : ToString Data := ⟨Data.toString⟩
 instance : ToString (List Data) := ⟨String.intercalate "\n" ∘ List.map toString⟩
 
