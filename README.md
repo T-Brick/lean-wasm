@@ -24,6 +24,11 @@ The first line will print the corresponding WAT program to the terminal. The
 second writes it to the file `file.wat`. If any error occurs an error message
 will be printed (for both commands).
 
+You can also specify what you are emitting:
+```
+bin/wasm --output file.wat --emit wat file.wasm
+```
+
 ## Project Organisation/Structure
 
 Files are generally organised into a similar layout as defined by the WASM spec:

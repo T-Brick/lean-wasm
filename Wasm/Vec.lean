@@ -51,6 +51,11 @@ def map (f : α → β) (v : Vec α) : Vec β :=
     rw [List.length_map]
     exact v.maxLen
   ⟩
+def mapM {m : Type u → Type v} [Monad m] {α : Type w} {β : Type u}
+    (f : α → m β) (v : Vec α) : m (Vec β) := do
+  return ⟨ ← v.list.mapM f
+         , sorry
+         ⟩
 
 def reverse (v : Vec α) : Vec α := ⟨v.list.reverse, by simp [v.maxLen]⟩
 

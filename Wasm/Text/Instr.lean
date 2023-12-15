@@ -14,6 +14,13 @@ inductive Label
 | name : Ident → Label
 | no_label
 
+def Label.toOption : Label → Option Ident
+  | .no_label => .none
+  | .name id  => .some id
+def Label.ofOption : Option Ident → Label
+  | .none    => .no_label
+  | .some id => .name id
+
 namespace Instr
 
 inductive Reference
@@ -350,7 +357,7 @@ instance : ToString Syntax.Instr.Table := ⟨(Table.toString ·)⟩
 namespace Memory
 
 def Arg.toString (a : Syntax.Instr.Memory.Arg) : String :=
-  s!"offset={a.offset} align={a.align}"
+  s!"offset={a.offset} align={2 ^ a.align.toNat}"
 instance : ToString Syntax.Instr.Memory.Arg := ⟨Arg.toString⟩
 
 def Integer.toString : Syntax.Instr.Memory.Integer nn → String

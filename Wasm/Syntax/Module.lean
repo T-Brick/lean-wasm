@@ -69,13 +69,13 @@ structure Import where
 end Module
 
 structure Module where
-  types   : Vec Typ.Func
-  funcs   : Vec Module.Function
-  tables  : Vec Module.Table
-  mems    : Vec Module.Memory
-  globals : Vec Module.Global
-  elems   : Vec Module.Element
-  datas   : Vec Module.Data
-  start   : Option Module.Start
-  imports : Vec Module.Import
-  exports : Vec Module.Export
+  types   : Vec Typ.Func        := Vec.nil
+  funcs   : Vec Module.Function := Vec.nil
+  tables  : Vec Module.Table    := Vec.nil
+  mems    : Vec Module.Memory   := Vec.nil
+  globals : Vec Module.Global   := Vec.nil
+  elems   : Vec Module.Element  := Vec.nil
+  datas   : Vec Module.Data     := Vec.nil
+  start   : Option Module.Start := none
+  imports : Vec Module.Import   := Vec.nil
+  exports : Vec Module.Export   := Vec.nil

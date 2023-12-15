@@ -229,4 +229,4 @@ inductive Instr : Type
 | call          : Module.Index.Function → Instr
 | call_indirect : Module.Index.Table → Module.Index.Typ → Instr
 
-def Expr := List Instr × Instr.Pseudo
+abbrev Expr := List Instr × Instr.Pseudo

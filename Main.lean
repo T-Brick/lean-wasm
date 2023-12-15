@@ -1,9 +1,35 @@
 import Wasm
 import Cli
 
-def version := "0.0.1"
+def version := "0.0.2"
 
 open Cli
+
+inductive Wasm.Output
+| wat
+| wasm
+deriving Inhabited
+
+def Wasm.outputText (p : Parsed) (msg : String) : IO UInt32 := do
+  match p.flag? "output" with
+  | .some file =>
+    let output := file.as! String
+    IO.FS.writeFile output msg
+    return 0
+  | .none =>
+    IO.println msg
+    return 0
+
+def Wasm.outputBin (p : Parsed)
+                   (input : System.FilePath)
+                   (data : Wasm.Binary.ByteSeq)
+                   : IO UInt32 := do
+  let output :=
+    match p.flag? "output" with
+    | .some file => file.as! String
+    | .none      => input.withExtension "wasm"
+  IO.FS.writeBinFile output ⟨data.toArray⟩
+  return 0
 
 def run (p : Parsed) : IO UInt32 := do
 
@@ -17,7 +43,14 @@ def run (p : Parsed) : IO UInt32 := do
   if ← input.isDir then
     panic! s!"Input path is a directory: {input}"
 
-  -- must be a WASM file
+  let emit : Wasm.Output :=
+    match p.flag? "emit" |>.map (·.as! String |>.toLower) with
+    | .some "wasm" => .wasm
+    | .some "wat"  => .wat
+    | .some x      => panic! s!"Unknown emit target '{x}'!"
+    | .none        => .wat
+
+  -- must be a WASM file for now :)
   let contents ← IO.FS.readBinFile input
   let init := Wasm.Binary.Bytecode.State.new contents
 
@@ -27,21 +60,19 @@ def run (p : Parsed) : IO UInt32 := do
     IO.println s!"{String.intercalate "\n" s.log.reverse}\n"
     return 1
   | (.ok mod, s) =>
-    let mod_str := Wasm.Text.Module.toString mod
-    match p.flag? "output" with
-    | .some file =>
-      let output := file.as! String
-      IO.FS.writeFile output mod_str
-    | .none => IO.println mod_str
-
+    match emit with
+    | .wat => Wasm.outputText p (Wasm.Text.Module.toString mod)
+    | .wasm => Wasm.outputBin p input (Wasm.Binary.Module.toOpcode mod)
   return 0
+
+  -- wasm2wat p init
 
 def topCmd : Cmd := `[Cli|
   wasm VIA run; [version]
   "A verified (WIP) implementation of WebAssembly"
 
   FLAGS:
-    -- e, emit : String;          "Specify the output format (either WAT or WASM)"
+    e, emit : String;          "Specify the output format (either WAT or WASM)"
     o, output : String;        "Specify output file"
 
   ARGS:

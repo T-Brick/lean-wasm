@@ -4,6 +4,7 @@
 import Wasm.Vec
 import Wasm.Syntax.Typ
 import Wasm.Text.Ident
+import Wasm.Text.Trans
 import Std.Lean.Format
 
 namespace Wasm
@@ -67,15 +68,23 @@ namespace Text.Typ
 -- For some reason the text section defines a heaptype, which is the same as
 --    as a reftype.
 def Heap := Syntax.Typ.Ref
+deriving DecidableEq, Inhabited, Repr
+
 instance : ToString Heap := ⟨Syntax.Typ.Ref.toString⟩
 instance : ToFormat Heap := ⟨Format.text ∘ Syntax.Typ.Ref.toString⟩
 
 
 def Param := Option Ident × Syntax.Typ.Val
+deriving DecidableEq, Inhabited
+
 def Param.toString : Param → String
   | (.some id, v) => s!"(param {id} {v})"
   | (.none, v)    => s!"(param {v})"
+instance : Coe Syntax.Typ.Val Param := ⟨(.none, ·)⟩
 instance : Coe Syntax.Typ.Result (Vec Param) := ⟨(·.map ((.none, ·)))⟩
+
+instance : OfText Param Syntax.Typ.Val := ⟨(return ·.2)⟩
+instance : OfText (Vec Param) Syntax.Typ.Result := ⟨(return ·.map (·.2))⟩
 
 instance : ToString Param        := ⟨Param.toString⟩
 instance : ToString (List Param) := ⟨String.concatWith " "⟩
@@ -85,6 +94,7 @@ instance : ToFormat Param := ⟨Format.text ∘ Param.toString⟩
 
 
 def Result := Syntax.Typ.Val
+deriving DecidableEq, Inhabited, Repr
 instance : Coe Syntax.Typ.Result (Vec Result) := ⟨(·)⟩
 
 instance : ToString Result := ⟨(s!"(result {·.toString})")⟩
@@ -95,7 +105,10 @@ instance : ToString (Vec Result) := ⟨String.concatWith " " ∘ Vec.list⟩
 structure Func where
   args   : Vec Param
   result : Vec Result
+deriving DecidableEq, Inhabited
 instance : Coe Syntax.Typ.Func Func := ⟨fun f => ⟨f.args, f.result⟩⟩
+instance : OfText Func Syntax.Typ.Func :=
+  ⟨fun f => return ⟨← ofText f.args, f.result⟩⟩
 
 instance : ToString Func := ⟨fun f => s!"(func {f.args} {f.result})"⟩
 instance : ToString Syntax.Typ.Func :=

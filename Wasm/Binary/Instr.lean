@@ -589,7 +589,7 @@ nonrec def Arg.ofOpcode : Bytecode Arg :=
   Bytecode.err_log "Parsing memory arg." do
   let a ← ofOpcode
   let o ← ofOpcode
-  return ⟨a, o⟩
+  return { align := a, offset := o }
 instance : Opcode Arg := ⟨Arg.toOpcode, Arg.ofOpcode⟩
 
 
@@ -619,14 +619,14 @@ nonrec def Integer.ofOpcode : Bytecode (Integer nn) :=
   match nn with
   | .double =>
     match ← Bytecode.readByte with
-    | 0x28 => return (Integer.load     ) (← ofOpcode)
-    | 0x2C => return (Integer.load8  .s) (← ofOpcode)
-    | 0x2D => return (Integer.load8  .u) (← ofOpcode)
-    | 0x2E => return (Integer.load16 .s) (← ofOpcode)
-    | 0x2F => return (Integer.load16 .u) (← ofOpcode)
-    | 0x36 => return (Integer.store    ) (← ofOpcode)
-    | 0x3A => return (Integer.store8   ) (← ofOpcode)
-    | 0x3B => return (Integer.store16  ) (← ofOpcode)
+    | 0x28 => return Integer.load      (← ofOpcode)
+    | 0x2C => return Integer.load8  .s (← ofOpcode)
+    | 0x2D => return Integer.load8  .u (← ofOpcode)
+    | 0x2E => return Integer.load16 .s (← ofOpcode)
+    | 0x2F => return Integer.load16 .u (← ofOpcode)
+    | 0x36 => return Integer.store     (← ofOpcode)
+    | 0x3A => return Integer.store8    (← ofOpcode)
+    | 0x3B => return Integer.store16   (← ofOpcode)
     | _    => Bytecode.err
   | .quad   =>
     match ← Bytecode.readByte with
