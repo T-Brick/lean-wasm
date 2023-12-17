@@ -3,16 +3,6 @@ import Mathlib.Data.List.Basic
 import Mathlib.Data.List.OfFn
 import Mathlib.Tactic
 
-private def hexstring := "0123456789ABCDEF"
-
-partial def Nat.toHexNumString (v : Nat) : String :=
-  if v = 0 then "0" else ⟨aux v |>.reverse⟩
-where aux (n : Nat) : List Char :=
-  if n ≤ 0 then [] else
-  (hexstring.get! ⟨n % 16⟩) :: aux (n / 16)
-
-def Nat.toHexString (v : Nat) : String := "0x" ++ Nat.toHexNumString v
-
 theorem Nat.lt_left_add {a b c : Nat} (h₁ : a + b < c) : a < c := by
   induction b with
   | zero => exact h₁

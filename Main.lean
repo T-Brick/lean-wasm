@@ -65,8 +65,6 @@ def run (p : Parsed) : IO UInt32 := do
     | .wasm => Wasm.outputBin p input (Wasm.Binary.Module.toOpcode mod)
   return 0
 
-  -- wasm2wat p init
-
 def topCmd : Cmd := `[Cli|
   wasm VIA run; [version]
   "A verified (WIP) implementation of WebAssembly"

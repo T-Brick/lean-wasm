@@ -183,8 +183,8 @@ def Relation.ofOpcode64 : Bytecode Relation :=
 nonrec def toOpcode : Integer nn → ByteSeq
   | .const v           =>
     match nn with
-    | .double => 0x41 :: toOpcode v
-    | .quad   => 0x42 :: toOpcode v
+    | .double => 0x41 :: toOpcode (Signed.ofUnsignedN v)
+    | .quad   => 0x42 :: toOpcode (Signed.ofUnsignedN v)
   | .unop u            =>
     match nn with
     | .double => [Unop.toOpcode32 u]

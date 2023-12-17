@@ -271,25 +271,26 @@ def Module.compose (m₁ m₂ : Syntax.Module) : Trans Syntax.Module := do
   | .some _, .some _ =>
     Trans.Error.errMsg s!"Fields contain multiple start functions!"
   | _, _ =>
-    if m₂.imports.length > 0 then
-      if m₁.funcs.length ≠ 0 then
-        Trans.Error.errMsg s!"Imports must preceed definitions of functions"
-      if m₁.tables.length ≠ 0 then
-        Trans.Error.errMsg s!"Imports must preceed definitions of tables"
-      if m₁.mems.length ≠ 0 then
-        Trans.Error.errMsg s!"Imports must preceed definitions of memories"
-      if m₁.globals.length ≠ 0 then
-        Trans.Error.errMsg s!"Imports must preceed definitions of globals"
-    return { types   := ⟨m₁.types.list   ++ m₁.types.list  , sorry⟩
-             funcs   := ⟨m₁.funcs.list   ++ m₁.funcs.list  , sorry⟩
-             tables  := ⟨m₁.tables.list  ++ m₁.tables.list , sorry⟩
-             mems    := ⟨m₁.mems.list    ++ m₁.mems.list   , sorry⟩
-             globals := ⟨m₁.globals.list ++ m₁.globals.list, sorry⟩
-             elems   := ⟨m₁.elems.list   ++ m₁.elems.list  , sorry⟩
-             datas   := ⟨m₁.datas.list   ++ m₁.datas.list  , sorry⟩
+    if m₂.imports.length > 0 then (do
+        if m₁.funcs.length ≠ 0 then
+          Trans.Error.errMsg s!"Imports must preceed definitions of functions"
+        if m₁.tables.length ≠ 0 then
+          Trans.Error.errMsg s!"Imports must preceed definitions of tables"
+        if m₁.mems.length ≠ 0 then
+          Trans.Error.errMsg s!"Imports must preceed definitions of memories"
+        if m₁.globals.length ≠ 0 then
+          Trans.Error.errMsg s!"Imports must preceed definitions of globals"
+      )
+    return { types   := ⟨m₁.types.list   ++ m₂.types.list  , sorry⟩
+             funcs   := ⟨m₁.funcs.list   ++ m₂.funcs.list  , sorry⟩
+             tables  := ⟨m₁.tables.list  ++ m₂.tables.list , sorry⟩
+             mems    := ⟨m₁.mems.list    ++ m₂.mems.list   , sorry⟩
+             globals := ⟨m₁.globals.list ++ m₂.globals.list, sorry⟩
+             elems   := ⟨m₁.elems.list   ++ m₂.elems.list  , sorry⟩
+             datas   := ⟨m₁.datas.list   ++ m₂.datas.list  , sorry⟩
              start   := if m₁.start.isNone then m₂.start else m₁.start
-             imports := ⟨m₁.imports.list ++ m₁.imports.list, sorry⟩
-             exports := ⟨m₁.exports.list ++ m₁.exports.list, sorry⟩
+             imports := ⟨m₁.imports.list ++ m₂.imports.list, sorry⟩
+             exports := ⟨m₁.exports.list ++ m₂.exports.list, sorry⟩
            }
 
 instance : Coe Syntax.Module Module :=
@@ -311,10 +312,16 @@ def Module.trans (m : Module) : Trans Syntax.Module := do
     |>.foldl Ident.Context.append {}
   -- todo check I well-formed!
   Trans.updateI I
-  m.fields.foldlM (fun m₁ f => do
-    let m₂ ← ofText f
-    return ← Module.compose m₁ m₂
-  ) {}
+  let m ← m.fields.foldlM (fun m₁ f => do
+      let s ← get
+      let m₂' ← ofText f
+      let m₂ ← Module.compose m₂' {types := ⟨s.types, sorry⟩}
+      Trans.updateI s.I
+      Trans.mergeTypes
+      return ← Module.compose m₁ m₂
+    ) {}
+  let s ← get
+  return { m with types := ⟨m.types.list ++ s.I.typedefs, sorry⟩}
 instance : OfText Module Syntax.Module := ⟨Module.trans⟩
 
 namespace Module

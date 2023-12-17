@@ -88,6 +88,14 @@ def Trans.updateI (I' : Ident.Context) : Trans Unit := do
   let s ← get
   set { s with I := I' }
 
+def Trans.getTypes : Trans (List Syntax.Typ.Func) := do
+  return (← get).types
+def Trans.mergeTypes : Trans Unit := do
+  let s ← get
+  let I' := {s.I with types    := s.I.types ++ s.types.map (fun _ => none)
+                      typedefs := s.I.typedefs ++ s.types}
+  set (Trans.State.mk I' [])
+
 namespace Trans.Error
 
 def err : Trans α := throw ⟨[]⟩

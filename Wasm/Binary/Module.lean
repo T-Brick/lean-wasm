@@ -291,7 +291,7 @@ nonrec def Code.Locals.ofOpcode : Bytecode Code.Locals :=
 instance : Opcode (Code.Locals) := ⟨Code.Locals.toOpcode, Code.Locals.ofOpcode⟩
 
 nonrec def Code.Funcs.toOpcode (funcs : Code.Func) : ByteSeq :=
-  toOpcode funcs.locals ++ toOpcode funcs.expr
+  toOpcode (funcs.locals.map (Locals.mk 1 ·)) ++ toOpcode funcs.expr
 nonrec def Code.Funcs.ofOpcode : Bytecode Code.Func :=
   Bytecode.err_log "Parsing code funcs." do
   let t' ← Vec.ofOpcode

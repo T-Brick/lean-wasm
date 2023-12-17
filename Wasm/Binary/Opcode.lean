@@ -201,8 +201,8 @@ nonrec def Vec.ofOpcode [inst : Opcode α] : Bytecode (Vec α) :=
 instance [Opcode α] : Opcode (Vec α) := ⟨Vec.toOpcode, Vec.ofOpcode⟩
 
 
-def Value.Name.toOpcode (name :Wasm.Syntax.Value.Name) : ByteSeq :=
-  name.value.toUTF8.toList
+def Value.Name.toOpcode (name : Wasm.Syntax.Value.Name) : ByteSeq :=
+  Vec.toOpcode ⟨name.value.toUTF8.toList, sorry⟩
 
 def Value.Name.ofOpcode : Bytecode Wasm.Syntax.Value.Name := do
   let name ← Vec.ofOpcode
