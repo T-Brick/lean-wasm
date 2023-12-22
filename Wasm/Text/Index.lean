@@ -16,6 +16,10 @@ nonrec def Index.toString : Index → String
   | .name v => toString v
 instance : ToString Index := ⟨Index.toString⟩
 
+instance : OfNat Index n := ⟨.num (Unsigned.ofNat n)⟩
+instance : Coe Unsigned32 Index := ⟨.num⟩
+instance : Coe Ident      Index := ⟨.name⟩
+
 namespace Index
 
 @[inline] def Typ       := Index
@@ -57,6 +61,26 @@ instance : Coe (Vec Syntax.Module.Index.Element)  (Vec Element)   := ⟨(·.map 
 instance : Coe (Vec Syntax.Module.Index.Data)     (Vec Data)      := ⟨(·.map (.num ·))⟩
 instance : Coe (Vec Syntax.Module.Index.Local)    (Vec Local)     := ⟨(·.map (.num ·))⟩
 instance : Coe (Vec Syntax.Module.Index.Label)    (Vec Label)     := ⟨(·.map (.num ·))⟩
+
+instance : OfNat Typ      n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Function n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Table    n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Memory   n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Global   n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Element  n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Data     n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Local    n := ⟨.num (Unsigned.ofNat n)⟩
+instance : OfNat Label    n := ⟨.num (Unsigned.ofNat n)⟩
+
+instance : Coe Ident Typ      := ⟨.name⟩
+instance : Coe Ident Function := ⟨.name⟩
+instance : Coe Ident Table    := ⟨.name⟩
+instance : Coe Ident Memory   := ⟨.name⟩
+instance : Coe Ident Global   := ⟨.name⟩
+instance : Coe Ident Element  := ⟨.name⟩
+instance : Coe Ident Data     := ⟨.name⟩
+instance : Coe Ident Local    := ⟨.name⟩
+instance : Coe Ident Label    := ⟨.name⟩
 
 open Ident.Context
 

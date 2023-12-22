@@ -160,8 +160,9 @@ inductive Table
 namespace Memory
 
 structure Arg where
-  offset : Unsigned32
-  align  : Unsigned32
+  offset : Unsigned32 := 0
+  align  : Unsigned32 := 0
+deriving Inhabited
 
 inductive Integer : (nn : Numeric.Size) → Type
 | load    : Arg → Integer nn

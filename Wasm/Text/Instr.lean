@@ -13,6 +13,8 @@ open Text.Module
 inductive Label
 | name : Ident → Label
 | no_label
+deriving Inhabited
+instance : Coe Ident Label := ⟨.name⟩
 
 def Label.toOption : Label → Option Ident
   | .no_label => .none
