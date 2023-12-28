@@ -77,6 +77,7 @@ instance : ToFormat Heap := ⟨Format.text ∘ Syntax.Typ.Ref.toString⟩
 def Param := Option Ident × Syntax.Typ.Val
 deriving DecidableEq, Inhabited
 
+def Param.mk : Option Ident → Syntax.Typ.Val → Param := Prod.mk
 def Param.toString : Param → String
   | (.some id, v) => s!"(param {id} {v})"
   | (.none, v)    => s!"(param {v})"

@@ -48,6 +48,7 @@ inductive Mut
 | var
 
 def Global := Mut × Val
+def Global.mk : Mut → Val → Global := Prod.mk
 
 inductive Extern
 | func  : Func → Extern

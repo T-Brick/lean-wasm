@@ -101,4 +101,13 @@ def join (v : Vec (Vec α)) : Option (Vec α) :=
     else none
 termination_by join v => v.length
 
+@[inline] def dropLast (v : Vec α) : Vec α :=
+  ⟨ v.list.dropLast, by
+    have := v.property
+    simp [Vec.list, Vec.max_length] at *
+    cases h : List.length v.val <;> (simp [h] at *; try linarith)
+  ⟩
+
+@[inline] def getLastD (v : Vec α) : α → α := v.list.getLastD
+
 end Vec

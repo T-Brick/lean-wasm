@@ -131,6 +131,8 @@ instance : OfText Label Syntax.Module.Index.Label := ⟨Label.trans⟩
 
 end Index
 
+/- since the abbreviation requires altering the program we allow it here as
+     part of the CST -/
 inductive Typeuse
 | type_ind : Index.Typ → Typeuse
 | param_res : Index.Typ → List Typ.Param → List Typ.Result → Typeuse

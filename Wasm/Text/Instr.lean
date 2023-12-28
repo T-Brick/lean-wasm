@@ -112,7 +112,7 @@ inductive Instr.Plain
 | br_table      : Vec Index.Label → Index.Label → Instr.Plain
 | wasm_return
 | call          : Index.Function → Instr.Plain
-| call_indirect : Index.Table → Index.Typ → Instr.Plain
+| call_indirect : Index.Table → Typeuse → Instr.Plain
 
 
 inductive Instr.BlockType
@@ -184,7 +184,7 @@ def Instr.ofSyntaxInstr : Syntax.Instr → Instr
   | .br_table t l         => .plain (.br_table t l)
   | .wasm_return          => .plain (.wasm_return)
   | .call f               => .plain (.call f)
-  | .call_indirect f t    => .plain (.call_indirect f t)
+  | .call_indirect f t    => .plain (.call_indirect f (.type_ind t))
 
 def Instr.ofSyntaxInstrList : List Syntax.Instr → List Instr
   | [] => []
@@ -398,7 +398,10 @@ def Plain.toString : Instr.Plain → String
   | .reference    r => s!"({r})"
   -- Parametric
   | .drop           => "drop"
-  | .select s       => sorry
+  | .select t?      =>
+    match t? with
+    | .none   => "select"
+    | .some t => s!"(select {t})"
   | .locl l         => s!"({l})"
   | .globl g        => s!"({g})"
   | .table t        => s!"({t})"
@@ -412,7 +415,7 @@ def Plain.toString : Instr.Plain → String
   | .br_table ls l  => s!"(br_table {ls} {l})"
   | .wasm_return    => "return"
   | .call x         => s!"(call {x})"
-  | .call_indirect t typ => sorry
+  | .call_indirect t tu => s!"(call_indirect {t} {tu})"
 instance : ToString Instr.Plain := ⟨Plain.toString⟩
 
 def BlockType.toString : BlockType → String
