@@ -326,7 +326,7 @@ macro_rules
       let vec := Vec.cons l' [wat_vec_labelidx| $l $ls*] sorry
       Plain.br_table (vec.dropLast) (vec.getLastD l')
     )
-| `([wat_plaininstr| return])                   => `(Plain.return)
+| `([wat_plaininstr| return])                   => `(Plain.wasm_return)
 | `([wat_plaininstr| call $x:wat_funcidx])      =>
     `(Plain.call [wat_funcidx| $x])
 | `([wat_plaininstr| call_indirect $x:wat_tableidx $y:wat_typeuse]) =>
