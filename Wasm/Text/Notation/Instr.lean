@@ -381,12 +381,12 @@ macro_rules
 | `([wat_plaininstr| elem.drop $x:wat_elemidx]) =>
     `(Plain.elem_drop [wat_elemidx| $x])
 -- Table Abbreviations
-| `([wat_plaininstr| table.get])  => `(Table.get 0)
-| `([wat_plaininstr| table.set])  => `(Table.set 0)
-| `([wat_plaininstr| table.size]) => `(Table.size 0)
-| `([wat_plaininstr| table.grow]) => `(Table.grow 0)
-| `([wat_plaininstr| table.fill]) => `(Table.fill 0)
-| `([wat_plaininstr| table.copy]) => `(Table.copy 0 0)
+| `([wat_plaininstr| table.get])  => `(Plain.table <| .get 0)
+| `([wat_plaininstr| table.set])  => `(Plain.table <| .set 0)
+| `([wat_plaininstr| table.size]) => `(Plain.table <| .size 0)
+| `([wat_plaininstr| table.grow]) => `(Plain.table <| .grow 0)
+| `([wat_plaininstr| table.fill]) => `(Plain.table <| .fill 0)
+| `([wat_plaininstr| table.copy]) => `(Plain.table <| .copy 0 0)
 | `([wat_plaininstr| table.init $x:wat_elemidx]) =>
     `(Plain.table <| .init 0 [wat_elemidx| $x])
 
@@ -438,18 +438,20 @@ macro_rules
   `(Plain.memory <| .integer (nn:=.quad) (.store16 [wat_memarg₂| $m]))
 | `([wat_plaininstr| i64.store32 $m]) =>
   `(Plain.memory <| .integer (nn:=.quad) (.store32 [wat_memarg₄| $m]))
-| `([wat_plaininstr| memory.size]) => `(Memory.size)
-| `([wat_plaininstr| memory.grow]) => `(Memory.grow)
-| `([wat_plaininstr| memory.fill]) => `(Memory.fill)
-| `([wat_plaininstr| memory.copy]) => `(Memory.copy)
-| `([wat_plaininstr| memory.init $x]) => `(Memory.init [wat_dataidx| $x])
-| `([wat_plaininstr| data.drop $x]) => `(Memory.data_drop [wat_dataidx| $x])
+| `([wat_plaininstr| memory.size]) => `(Plain.memory <| .size)
+| `([wat_plaininstr| memory.grow]) => `(Plain.memory <| .grow)
+| `([wat_plaininstr| memory.fill]) => `(Plain.memory <| .fill)
+| `([wat_plaininstr| memory.copy]) => `(Plain.memory <| .copy)
+| `([wat_plaininstr| memory.init $x]) =>
+    `(Plain.memory <| .init [wat_dataidx| $x])
+| `([wat_plaininstr| data.drop $x]) =>
+    `(Plain.memory <| .data_drop [wat_dataidx| $x])
 
 macro_rules
 | `([wat_plaininstr| i32.const $n]) =>
-  `(Plain.numeric (nn:=.double) <| .integer (.const [wat_i32| $n]))
+    `(Plain.numeric (nn:=.double) <| .integer (.const [wat_i32| $n]))
 | `([wat_plaininstr| i64.const $n]) =>
-  `(Plain.numeric (nn:=.quad) <| .integer (.const [wat_i64| $n]))
+    `(Plain.numeric (nn:=.quad) <| .integer (.const [wat_i64| $n]))
 -- todo f32/f64 const
 
 -- some helpers to make the macro_rules shorter/more readable
