@@ -7,8 +7,9 @@ namespace Wasm.Text.Notation
 open Wasm.Text.Module
 
 declare_syntax_cat wat_index
-scoped syntax wat_u32   : wat_index
-scoped syntax wat_ident : wat_index
+scoped syntax wat_u32      : wat_index
+scoped syntax wat_ident    : wat_index
+scoped syntax "↑" term:max : wat_index
 
 scoped syntax "[wat_index|" wat_index "]"      : term
 scoped syntax "[wat_vec_index|" wat_index* "]" : term
@@ -16,6 +17,7 @@ scoped syntax "[wat_vec_index|" wat_index* "]" : term
 macro_rules
 | `([wat_index| $x:wat_u32 ])    => `(Index.num [wat_u32| $x])
 | `([wat_index| $id:wat_ident ]) => `(Index.name [wat_ident| $id])
+| `([wat_index| ↑$e ])           => `(Index.name $e)
 
 macro_rules
 | `([wat_vec_index| ]) => `(Vec.nil)
