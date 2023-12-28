@@ -9,13 +9,15 @@ open Numbers Wasm.Text Wasm.Text.Instr
 
 /- Labels -/
 declare_syntax_cat wat_label
-scoped syntax wat_ident ? : wat_label
+scoped syntax wat_ident ?  : wat_label
+scoped syntax "↑" term:max : wat_label
 
 scoped syntax "[wat_label|" wat_label "]" : term
 
 macro_rules
 | `([wat_label| $v:wat_ident ]) => `(Label.name [wat_ident| $v])
-| `([wat_label| ]) => `(Label.no_label)
+| `([wat_label| ])              => `(Label.no_label)
+| `([wat_label| ↑$e])           => `($e)
 
 /- Memory Args -/
 declare_syntax_cat wat_offset
