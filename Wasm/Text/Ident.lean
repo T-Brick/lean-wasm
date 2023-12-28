@@ -24,13 +24,13 @@ def Ident.mkValid (name : String) : Option Ident :=
   then some ⟨name, h₁, h₂⟩
   else none
 
+def Ident.mkValid! (name : String) : Ident :=
+  match Ident.mkValid name with
+  | .some i => i
+  | .none   => ⟨"!(INVALID IDENT)!", sorry ,sorry⟩
+
 def Ident.parse (name : String) : Option Ident :=
   if name.startsWith "$" then Ident.mkValid (name.drop 1) else none
-
-def Ident.parse' (name : String) : Ident :=
-  match Ident.mkValid name with
-  | .some id => id
-  | .none => ⟨"!(INVALID IDENT)!", sorry ,sorry⟩
 
 def Ident.parse! (name : String) : Ident :=
   match Ident.parse name with

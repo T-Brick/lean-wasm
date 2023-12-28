@@ -667,9 +667,10 @@ macro_rules
 declare_syntax_cat wat_blockinstr
 declare_syntax_cat wat_instr
 
-scoped syntax wat_plaininstr : wat_instr
-scoped syntax wat_blockinstr : wat_instr
+scoped syntax wat_plaininstr    : wat_instr
+scoped syntax wat_blockinstr    : wat_instr
 scoped syntax "(" wat_instr ")" : wat_instr
+syntax "↑" term:max             : wat_instr
 
 scoped syntax "block" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
 scoped syntax "loop" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
@@ -684,6 +685,7 @@ macro_rules
 | `([wat_instr| $i:wat_plaininstr]) => `(Instr.plain [wat_plaininstr| $i])
 | `([wat_instr| $i:wat_blockinstr]) => `(Instr.block [wat_blockinstr| $i])
 | `([wat_instr| ($i:wat_instr)])    => `([wat_instr| $i])
+| `([wat_instr| ↑$e])               => `($e)
 
 macro_rules
 | `([wat_instr_list| ]) => `([])
@@ -698,7 +700,7 @@ macro_rules
 -- Loop
 | `([wat_blockinstr| loop $l:wat_label $bt:wat_blocktype
                         $is:wat_instr* end $id]) =>
-    `(Block.block [wat_label| $l] [wat_blocktype| $bt]
+    `(Block.loop [wat_label| $l] [wat_blocktype| $bt]
         [wat_instr_list| $is*] .wasm_end [wat_ident?| $id])
 -- If
 | `([wat_blockinstr| if $l:wat_label $bt:wat_blocktype $is₁:wat_instr*
@@ -712,7 +714,7 @@ macro_rules
 -- Abbreviation for If
 | `([wat_blockinstr| if $l:wat_label $bt:wat_blocktype
                         $is:wat_instr* end $id]) =>
-    `(Block.block [wat_label| $l] [wat_blocktype| $bt]
+    `(Block.wasm_if [wat_label| $l] [wat_blocktype| $bt]
         [wat_instr_list| $is*]
         .wasm_else .none [] .wasm_end [wat_ident?| $id])
 
