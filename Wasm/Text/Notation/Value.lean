@@ -15,29 +15,29 @@ declare_syntax_cat wat_s64
 declare_syntax_cat wat_i32
 declare_syntax_cat wat_i64
 
-syntax num : wat_u32
-syntax num : wat_u64
+scoped syntax num : wat_u32
+scoped syntax num : wat_u64
 
-syntax num : wat_s32
-syntax num : wat_s33
-syntax num : wat_s64
+scoped syntax num : wat_s32
+scoped syntax num : wat_s33
+scoped syntax num : wat_s64
 
-syntax num     : wat_i32
-syntax wat_u32 : wat_i32
-syntax wat_s32 : wat_i32
-syntax num     : wat_i64
-syntax wat_u64 : wat_i64
-syntax wat_s64 : wat_i64
+scoped syntax num     : wat_i32
+scoped syntax wat_u32 : wat_i32
+scoped syntax wat_s32 : wat_i32
+scoped syntax num     : wat_i64
+scoped syntax wat_u64 : wat_i64
+scoped syntax wat_s64 : wat_i64
 
-syntax "[wat_u32|" wat_u32 "]" : term
-syntax "[wat_u64|" wat_u64 "]" : term
+scoped syntax "[wat_u32|" wat_u32 "]" : term
+scoped syntax "[wat_u64|" wat_u64 "]" : term
 
-syntax "[wat_s32|" wat_s32 "]" : term
-syntax "[wat_s33|" wat_s33 "]" : term
-syntax "[wat_s64|" wat_s64 "]" : term
+scoped syntax "[wat_s32|" wat_s32 "]" : term
+scoped syntax "[wat_s33|" wat_s33 "]" : term
+scoped syntax "[wat_s64|" wat_s64 "]" : term
 
-syntax "[wat_i32|" wat_i32 "]" : term
-syntax "[wat_i64|" wat_i64 "]" : term
+scoped syntax "[wat_i32|" wat_i32 "]" : term
+scoped syntax "[wat_i64|" wat_i64 "]" : term
 
 macro_rules
 | `([wat_u32| $x:num]) => `(Unsigned.ofNat (n:=⟨32, by simp⟩) $x)
@@ -57,12 +57,12 @@ macro_rules
 
 declare_syntax_cat wat_ident
 declare_syntax_cat wat_ident?
-syntax ident : wat_ident
-syntax wat_ident ? : wat_ident?
+scoped syntax ident : wat_ident
+scoped syntax wat_ident ? : wat_ident?
 
-syntax "[wat_ident_str|" ident "]" : term
-syntax "[wat_ident|" wat_ident "]" : term
-syntax "[wat_ident?|" wat_ident? "]" :term
+scoped syntax "[wat_ident_str|" ident "]" : term
+scoped syntax "[wat_ident|" wat_ident "]" : term
+scoped syntax "[wat_ident?|" wat_ident? "]" :term
 
 /- TODO: identifiers in WAT should be preceded by a `$` but this clashes with -/
 macro_rules
@@ -75,14 +75,14 @@ macro_rules
 
 
 declare_syntax_cat wat_value
-syntax wat_u32   : wat_value
-syntax wat_u64   : wat_value
-syntax wat_s32   : wat_value
-syntax wat_s64   : wat_value
-syntax wat_ident : wat_value
-syntax str       : wat_value
+scoped syntax wat_u32   : wat_value
+scoped syntax wat_u64   : wat_value
+scoped syntax wat_s32   : wat_value
+scoped syntax wat_s64   : wat_value
+scoped syntax wat_ident : wat_value
+scoped syntax str       : wat_value
 
-syntax "[wat_value|" wat_value "]" : term
+scoped syntax "[wat_value|" wat_value "]" : term
 
 macro_rules
 | `([wat_value| $n:wat_u32    ]) => `([wat_u32| $n])

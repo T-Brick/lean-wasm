@@ -10,12 +10,12 @@ open Numbers Wasm.Text Wasm.Syntax.Typ
 
 /- Num Types -/
 declare_syntax_cat wat_numtype
-syntax "i32" : wat_numtype
-syntax "i64" : wat_numtype
-syntax "f32" : wat_numtype
-syntax "f64" : wat_numtype
+scoped syntax "i32" : wat_numtype
+scoped syntax "i64" : wat_numtype
+scoped syntax "f32" : wat_numtype
+scoped syntax "f64" : wat_numtype
 
-syntax "[wat_numtype|" wat_numtype "]" : term
+scoped syntax "[wat_numtype|" wat_numtype "]" : term
 
 macro_rules
 | `([wat_numtype| i32 ]) => `(Wasm.Syntax.Typ.Num.i32   )
@@ -26,9 +26,9 @@ macro_rules
 
 /- Vector Types -/
 declare_syntax_cat wat_vectype
-syntax "v128" : wat_vectype
+scoped syntax "v128" : wat_vectype
 
-syntax "[wat_vectype|" wat_vectype "]" : term
+scoped syntax "[wat_vectype|" wat_vectype "]" : term
 
 macro_rules
 | `([wat_vectype| v128 ]) => `(Wasm.Syntax.Typ.Vec.v128)
@@ -37,14 +37,14 @@ macro_rules
 /- Reference Types -/
 declare_syntax_cat wat_reftype
 declare_syntax_cat wat_heaptype
-syntax "funcref"   : wat_reftype
-syntax "externref" : wat_reftype
+scoped syntax "funcref"   : wat_reftype
+scoped syntax "externref" : wat_reftype
 
-syntax "func"   : wat_heaptype
-syntax "extern" : wat_heaptype
+scoped syntax "func"   : wat_heaptype
+scoped syntax "extern" : wat_heaptype
 
-syntax "[wat_reftype|" wat_reftype "]"   : term
-syntax "[wat_heaptype|" wat_heaptype "]" : term
+scoped syntax "[wat_reftype|" wat_reftype "]"   : term
+scoped syntax "[wat_heaptype|" wat_heaptype "]" : term
 
 macro_rules
 | `([wat_reftype| funcref   ]) => `(Wasm.Syntax.Typ.Ref.func  )
@@ -57,11 +57,11 @@ macro_rules
 
 /- Value Types -/
 declare_syntax_cat wat_valtype
-syntax wat_numtype : wat_valtype
-syntax wat_vectype : wat_valtype
-syntax wat_reftype : wat_valtype
+scoped syntax wat_numtype : wat_valtype
+scoped syntax wat_vectype : wat_valtype
+scoped syntax wat_reftype : wat_valtype
 
-syntax "[wat_valtype|" wat_valtype "]" : term
+scoped syntax "[wat_valtype|" wat_valtype "]" : term
 
 macro_rules
 | `([wat_valtype| $t:wat_numtype]) => `(Val.num [wat_numtype| $t])
@@ -72,15 +72,15 @@ macro_rules
 /- Parameters -/
 declare_syntax_cat wat_param_core
 declare_syntax_cat wat_param
-syntax "(" "param" wat_valtype ")"          : wat_param_core
-syntax "(" "param" (wat_ident)? wat_valtype ")" : wat_param_core
+scoped syntax "(" "param" wat_valtype ")"          : wat_param_core
+scoped syntax "(" "param" (wat_ident)? wat_valtype ")" : wat_param_core
 
-syntax "(" "param" wat_valtype* ")" : wat_param
-syntax wat_param_core               : wat_param
+scoped syntax "(" "param" wat_valtype* ")" : wat_param
+scoped syntax wat_param_core               : wat_param
 
-syntax "[wat_param_core|" wat_param_core "]" : term
-syntax "[wat_param|" wat_param "]"           : term
-syntax "[wat_param_list|" wat_param* "]"     : term
+scoped syntax "[wat_param_core|" wat_param_core "]" : term
+scoped syntax "[wat_param|" wat_param "]"           : term
+scoped syntax "[wat_param_list|" wat_param* "]"     : term
 
 macro_rules
 | `([wat_param_core| (param $t:wat_valtype)]) =>
@@ -107,14 +107,14 @@ macro_rules
 /- Results -/
 declare_syntax_cat wat_result_core
 declare_syntax_cat wat_result
-syntax "(" "result" wat_valtype ")"  : wat_result_core
+scoped syntax "(" "result" wat_valtype ")"  : wat_result_core
 
-syntax wat_result_core               : wat_result
-syntax "(" "result" wat_valtype* ")" : wat_result
+scoped syntax wat_result_core               : wat_result
+scoped syntax "(" "result" wat_valtype* ")" : wat_result
 
-syntax "[wat_result_core|" wat_result_core "]" : term
-syntax "[wat_result|" wat_result "]"           : term
-syntax "[wat_result_list|" wat_result* "]"     : term
+scoped syntax "[wat_result_core|" wat_result_core "]" : term
+scoped syntax "[wat_result|" wat_result "]"           : term
+scoped syntax "[wat_result_list|" wat_result* "]"     : term
 
 macro_rules
 | `([wat_result_core| (result $t:wat_valtype)]) => `([wat_valtype| $t])
@@ -137,8 +137,8 @@ macro_rules
 
 /- Functions -/
 declare_syntax_cat wat_functype
-syntax "(" "func" wat_param* wat_result* ")" : wat_functype
-syntax "[wat_functype|" wat_functype "]" : term
+scoped syntax "(" "func" wat_param* wat_result* ")" : wat_functype
+scoped syntax "[wat_functype|" wat_functype "]" : term
 macro_rules
 | `([wat_functype| (func $t₁:wat_param* $t₂:wat_result*)]) =>
     `(Typ.Func.mk [wat_param_list| $t₁*] [wat_result_list| $t₂*])
@@ -146,10 +146,10 @@ macro_rules
 
 /- Limits -/
 declare_syntax_cat wat_limits
-syntax wat_u32     : wat_limits
-syntax wat_u32 wat_u32 : wat_limits
+scoped syntax wat_u32     : wat_limits
+scoped syntax wat_u32 wat_u32 : wat_limits
 
-syntax "[wat_limits|" wat_limits "]" : term
+scoped syntax "[wat_limits|" wat_limits "]" : term
 
 macro_rules
 | `([wat_limits| $n:wat_u32 ]) =>
@@ -160,9 +160,9 @@ macro_rules
 
 /- Memory Types -/
 declare_syntax_cat wat_memtype
-syntax wat_limits : wat_memtype
+scoped syntax wat_limits : wat_memtype
 
-syntax "[wat_memtype|" wat_memtype "]" : term
+scoped syntax "[wat_memtype|" wat_memtype "]" : term
 
 macro_rules
 | `([wat_memtype| $lim:wat_limits]) => `([wat_limits| $lim])
@@ -170,9 +170,9 @@ macro_rules
 
 /- Table Types -/
 declare_syntax_cat wat_tabletype
-syntax wat_limits wat_reftype : wat_tabletype
+scoped syntax wat_limits wat_reftype : wat_tabletype
 
-syntax "[wat_tabletype|" wat_tabletype "]" : term
+scoped syntax "[wat_tabletype|" wat_tabletype "]" : term
 
 macro_rules
 | `([wat_tabletype| $lim:wat_limits $et:wat_reftype]) =>
@@ -180,10 +180,10 @@ macro_rules
 
 
 declare_syntax_cat wat_globaltype
-syntax wat_valtype               : wat_globaltype
-syntax "(" "mut" wat_valtype ")" : wat_globaltype
+scoped syntax wat_valtype               : wat_globaltype
+scoped syntax "(" "mut" wat_valtype ")" : wat_globaltype
 
-syntax "[wat_globaltype|" wat_globaltype "]" : term
+scoped syntax "[wat_globaltype|" wat_globaltype "]" : term
 
 macro_rules
 | `([wat_globaltype| $t:wat_valtype]) => `(Global.mk Mut.const [wat_valtype| $t])

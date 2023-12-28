@@ -7,11 +7,11 @@ namespace Wasm.Text.Notation
 open Wasm.Text.Module
 
 declare_syntax_cat wat_index
-syntax wat_u32   : wat_index
-syntax wat_ident : wat_index
+scoped syntax wat_u32   : wat_index
+scoped syntax wat_ident : wat_index
 
-syntax "[wat_index|" wat_index "]"      : term
-syntax "[wat_vec_index|" wat_index* "]" : term
+scoped syntax "[wat_index|" wat_index "]"      : term
+scoped syntax "[wat_vec_index|" wat_index* "]" : term
 
 macro_rules
 | `([wat_index| $x:wat_u32 ])    => `(Index.num [wat_u32| $x])
@@ -38,35 +38,35 @@ declare_syntax_cat wat_dataidx
 declare_syntax_cat wat_localidx
 declare_syntax_cat wat_labelidx
 
-syntax wat_index : wat_typeidx
-syntax wat_index : wat_funcidx
-syntax wat_index : wat_tableidx
-syntax wat_index : wat_memidx
-syntax wat_index : wat_globalidx
-syntax wat_index : wat_elemidx
-syntax wat_index : wat_dataidx
-syntax wat_index : wat_localidx
-syntax wat_index : wat_labelidx
+scoped syntax wat_index : wat_typeidx
+scoped syntax wat_index : wat_funcidx
+scoped syntax wat_index : wat_tableidx
+scoped syntax wat_index : wat_memidx
+scoped syntax wat_index : wat_globalidx
+scoped syntax wat_index : wat_elemidx
+scoped syntax wat_index : wat_dataidx
+scoped syntax wat_index : wat_localidx
+scoped syntax wat_index : wat_labelidx
 
-syntax "[wat_typeidx|"   wat_typeidx   "]" : term
-syntax "[wat_funcidx|"   wat_funcidx   "]" : term
-syntax "[wat_tableidx|"  wat_tableidx  "]" : term
-syntax "[wat_memidx|"    wat_memidx    "]" : term
-syntax "[wat_globalidx|" wat_globalidx "]" : term
-syntax "[wat_elemidx|"   wat_elemidx   "]" : term
-syntax "[wat_dataidx|"   wat_dataidx   "]" : term
-syntax "[wat_localidx|"  wat_localidx  "]" : term
-syntax "[wat_labelidx|"  wat_labelidx  "]" : term
+scoped syntax "[wat_typeidx|"   wat_typeidx   "]" : term
+scoped syntax "[wat_funcidx|"   wat_funcidx   "]" : term
+scoped syntax "[wat_tableidx|"  wat_tableidx  "]" : term
+scoped syntax "[wat_memidx|"    wat_memidx    "]" : term
+scoped syntax "[wat_globalidx|" wat_globalidx "]" : term
+scoped syntax "[wat_elemidx|"   wat_elemidx   "]" : term
+scoped syntax "[wat_dataidx|"   wat_dataidx   "]" : term
+scoped syntax "[wat_localidx|"  wat_localidx  "]" : term
+scoped syntax "[wat_labelidx|"  wat_labelidx  "]" : term
 
-syntax "[wat_vec_typeidx|"   wat_typeidx*   "]" : term
-syntax "[wat_vec_funcidx|"   wat_funcidx*   "]" : term
-syntax "[wat_vec_tableidx|"  wat_tableidx*  "]" : term
-syntax "[wat_vec_memidx|"    wat_memidx*    "]" : term
-syntax "[wat_vec_globalidx|" wat_globalidx* "]" : term
-syntax "[wat_vec_elemidx|"   wat_elemidx*   "]" : term
-syntax "[wat_vec_dataidx|"   wat_dataidx*   "]" : term
-syntax "[wat_vec_localidx|"  wat_localidx*  "]" : term
-syntax "[wat_vec_labelidx|"  wat_labelidx*  "]" : term
+scoped syntax "[wat_vec_typeidx|"   wat_typeidx*   "]" : term
+scoped syntax "[wat_vec_funcidx|"   wat_funcidx*   "]" : term
+scoped syntax "[wat_vec_tableidx|"  wat_tableidx*  "]" : term
+scoped syntax "[wat_vec_memidx|"    wat_memidx*    "]" : term
+scoped syntax "[wat_vec_globalidx|" wat_globalidx* "]" : term
+scoped syntax "[wat_vec_elemidx|"   wat_elemidx*   "]" : term
+scoped syntax "[wat_vec_dataidx|"   wat_dataidx*   "]" : term
+scoped syntax "[wat_vec_localidx|"  wat_localidx*  "]" : term
+scoped syntax "[wat_vec_labelidx|"  wat_labelidx*  "]" : term
 
 macro_rules
 | `([wat_typeidx|   $i:wat_index ]) => `([wat_index| $i])
@@ -110,11 +110,11 @@ macro_rules
 | `([wat_vec_labelidx|  ]) => `(Vec.nil)
 
 declare_syntax_cat wat_typeuse
-syntax "(" "type" wat_typeidx ")" : wat_typeuse
-syntax "(" "type" wat_typeidx ")" wat_param* wat_result* : wat_typeuse
-syntax wat_param* wat_result* : wat_typeuse
+scoped syntax "(" "type" wat_typeidx ")" : wat_typeuse
+scoped syntax "(" "type" wat_typeidx ")" wat_param* wat_result* : wat_typeuse
+scoped syntax wat_param* wat_result* : wat_typeuse
 
-syntax "[wat_typeuse|" wat_typeuse "]" : term
+scoped syntax "[wat_typeuse|" wat_typeuse "]" : term
 
 macro_rules
 | `([wat_typeuse| (type $x)]) => `(Typeuse.type_ind [wat_typeidx| $x])

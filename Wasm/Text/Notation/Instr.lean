@@ -9,9 +9,9 @@ open Numbers Wasm.Text Wasm.Text.Instr
 
 /- Labels -/
 declare_syntax_cat wat_label
-syntax wat_ident ? : wat_label
+scoped syntax wat_ident ? : wat_label
 
-syntax "[wat_label|" wat_label "]" : term
+scoped syntax "[wat_label|" wat_label "]" : term
 
 macro_rules
 | `([wat_label| $v:wat_ident ]) => `(Label.name [wat_ident| $v])
@@ -24,22 +24,22 @@ declare_syntax_cat wat_memarg₁  -- todo is there a better way (probably)
 declare_syntax_cat wat_memarg₂
 declare_syntax_cat wat_memarg₄
 declare_syntax_cat wat_memarg₈
-syntax ("offset="wat_u32)       : wat_offset
-syntax ("align="wat_u32)        : wat_align
-syntax wat_offset ? wat_align ? : wat_memarg₁
-syntax wat_offset ? wat_align ? : wat_memarg₂
-syntax wat_offset ? wat_align ? : wat_memarg₄
-syntax wat_offset ? wat_align ? : wat_memarg₈
+scoped syntax ("offset="wat_u32)       : wat_offset
+scoped syntax ("align="wat_u32)        : wat_align
+scoped syntax wat_offset ? wat_align ? : wat_memarg₁
+scoped syntax wat_offset ? wat_align ? : wat_memarg₂
+scoped syntax wat_offset ? wat_align ? : wat_memarg₄
+scoped syntax wat_offset ? wat_align ? : wat_memarg₈
 
-syntax "[wat_offset|" wat_offset ? "]" : term
-syntax "[wat_align₁|" wat_align ? "]"   : term
-syntax "[wat_align₂|" wat_align ? "]"   : term
-syntax "[wat_align₄|" wat_align ? "]"   : term
-syntax "[wat_align₈|" wat_align ? "]"   : term
-syntax "[wat_memarg₁|" wat_memarg₁ "]" : term
-syntax "[wat_memarg₂|" wat_memarg₂ "]" : term
-syntax "[wat_memarg₄|" wat_memarg₄ "]" : term
-syntax "[wat_memarg₈|" wat_memarg₈ "]" : term
+scoped syntax "[wat_offset|" wat_offset ? "]" : term
+scoped syntax "[wat_align₁|" wat_align ? "]"   : term
+scoped syntax "[wat_align₂|" wat_align ? "]"   : term
+scoped syntax "[wat_align₄|" wat_align ? "]"   : term
+scoped syntax "[wat_align₈|" wat_align ? "]"   : term
+scoped syntax "[wat_memarg₁|" wat_memarg₁ "]" : term
+scoped syntax "[wat_memarg₂|" wat_memarg₂ "]" : term
+scoped syntax "[wat_memarg₄|" wat_memarg₄ "]" : term
+scoped syntax "[wat_memarg₈|" wat_memarg₈ "]" : term
 
 macro_rules
 | `([wat_offset| ]) => `([wat_u32| 0])
@@ -99,222 +99,222 @@ macro_rules
 
 /- Plain Instructions -/
 declare_syntax_cat wat_plaininstr
-syntax "unreachable"                              : wat_plaininstr
-syntax "nop"                                      : wat_plaininstr
-syntax "br" wat_labelidx                          : wat_plaininstr
-syntax "br_if" wat_labelidx                       : wat_plaininstr
-syntax "br_table" wat_labelidx+                   : wat_plaininstr
-syntax "return"                                   : wat_plaininstr
-syntax "call" wat_funcidx                         : wat_plaininstr
-syntax "call_indirect" wat_tableidx ? wat_typeuse : wat_plaininstr
+scoped syntax "unreachable"                              : wat_plaininstr
+scoped syntax "nop"                                      : wat_plaininstr
+scoped syntax "br" wat_labelidx                          : wat_plaininstr
+scoped syntax "br_if" wat_labelidx                       : wat_plaininstr
+scoped syntax "br_table" wat_labelidx+                   : wat_plaininstr
+scoped syntax "return"                                   : wat_plaininstr
+scoped syntax "call" wat_funcidx                         : wat_plaininstr
+scoped syntax "call_indirect" wat_tableidx ? wat_typeuse : wat_plaininstr
 -- References
-syntax "ref.null" wat_heaptype                    : wat_plaininstr
-syntax "ref.is_null"                              : wat_plaininstr
-syntax "ref.func" wat_funcidx                     : wat_plaininstr
+scoped syntax "ref.null" wat_heaptype                    : wat_plaininstr
+scoped syntax "ref.is_null"                              : wat_plaininstr
+scoped syntax "ref.func" wat_funcidx                     : wat_plaininstr
 -- Parametric
-syntax "drop"                                     : wat_plaininstr
-syntax "select" (wat_result*)?                    : wat_plaininstr
+scoped syntax "drop"                                     : wat_plaininstr
+scoped syntax "select" (wat_result*)?                    : wat_plaininstr
 -- Variadic
-syntax "local.get" wat_localidx                   : wat_plaininstr
-syntax "local.set" wat_localidx                   : wat_plaininstr
-syntax "local.tee" wat_localidx                   : wat_plaininstr
-syntax "global.get" wat_globalidx                 : wat_plaininstr
-syntax "global.set" wat_globalidx                 : wat_plaininstr
+scoped syntax "local.get" wat_localidx                   : wat_plaininstr
+scoped syntax "local.set" wat_localidx                   : wat_plaininstr
+scoped syntax "local.tee" wat_localidx                   : wat_plaininstr
+scoped syntax "global.get" wat_globalidx                 : wat_plaininstr
+scoped syntax "global.set" wat_globalidx                 : wat_plaininstr
 -- Table
-syntax "table.get" wat_tableidx ?                 : wat_plaininstr
-syntax "table.set" wat_tableidx ?                 : wat_plaininstr
-syntax "table.size" wat_tableidx ?                : wat_plaininstr
-syntax "table.grow" wat_tableidx ?                : wat_plaininstr
-syntax "table.fill" wat_tableidx ?                : wat_plaininstr
-syntax "table.copy" (wat_tableidx wat_tableidx)?  : wat_plaininstr
-syntax "table.init" wat_tableidx ? wat_elemidx    : wat_plaininstr
-syntax "elem.drop" wat_elemidx                    : wat_plaininstr
+scoped syntax "table.get" wat_tableidx ?                 : wat_plaininstr
+scoped syntax "table.set" wat_tableidx ?                 : wat_plaininstr
+scoped syntax "table.size" wat_tableidx ?                : wat_plaininstr
+scoped syntax "table.grow" wat_tableidx ?                : wat_plaininstr
+scoped syntax "table.fill" wat_tableidx ?                : wat_plaininstr
+scoped syntax "table.copy" (wat_tableidx wat_tableidx)?  : wat_plaininstr
+scoped syntax "table.init" wat_tableidx ? wat_elemidx    : wat_plaininstr
+scoped syntax "elem.drop" wat_elemidx                    : wat_plaininstr
 -- Memory
-syntax "i32.load" wat_memarg₄     : wat_plaininstr
-syntax "i64.load" wat_memarg₈     : wat_plaininstr
-syntax "f32.load" wat_memarg₄     : wat_plaininstr
-syntax "f64.load" wat_memarg₈     : wat_plaininstr
-syntax "i32.load8_s" wat_memarg₁  : wat_plaininstr
-syntax "i32.load8_u" wat_memarg₁  : wat_plaininstr
-syntax "i32.load16_s" wat_memarg₂ : wat_plaininstr
-syntax "i32.load16_u" wat_memarg₂ : wat_plaininstr
-syntax "i64.load8_s" wat_memarg₁  : wat_plaininstr
-syntax "i64.load8_u" wat_memarg₁  : wat_plaininstr
-syntax "i64.load16_s" wat_memarg₂ : wat_plaininstr
-syntax "i64.load16_u" wat_memarg₂ : wat_plaininstr
-syntax "i64.load32_s" wat_memarg₄ : wat_plaininstr
-syntax "i64.load32_u" wat_memarg₄ : wat_plaininstr
-syntax "i32.store" wat_memarg₄    : wat_plaininstr
-syntax "i64.store" wat_memarg₈    : wat_plaininstr
-syntax "f32.store" wat_memarg₄    : wat_plaininstr
-syntax "f64.store" wat_memarg₈    : wat_plaininstr
-syntax "i32.store8" wat_memarg₁   : wat_plaininstr
-syntax "i32.store16" wat_memarg₂  : wat_plaininstr
-syntax "i64.store8" wat_memarg₁   : wat_plaininstr
-syntax "i64.store16" wat_memarg₂  : wat_plaininstr
-syntax "i64.store32" wat_memarg₄  : wat_plaininstr
-syntax "memory.size"              : wat_plaininstr
-syntax "memory.grow"              : wat_plaininstr
-syntax "memory.fill"              : wat_plaininstr
-syntax "memory.copy"              : wat_plaininstr
-syntax "memory.init" wat_dataidx  : wat_plaininstr
-syntax "data.drop" wat_dataidx    : wat_plaininstr
+scoped syntax "i32.load" wat_memarg₄     : wat_plaininstr
+scoped syntax "i64.load" wat_memarg₈     : wat_plaininstr
+scoped syntax "f32.load" wat_memarg₄     : wat_plaininstr
+scoped syntax "f64.load" wat_memarg₈     : wat_plaininstr
+scoped syntax "i32.load8_s" wat_memarg₁  : wat_plaininstr
+scoped syntax "i32.load8_u" wat_memarg₁  : wat_plaininstr
+scoped syntax "i32.load16_s" wat_memarg₂ : wat_plaininstr
+scoped syntax "i32.load16_u" wat_memarg₂ : wat_plaininstr
+scoped syntax "i64.load8_s" wat_memarg₁  : wat_plaininstr
+scoped syntax "i64.load8_u" wat_memarg₁  : wat_plaininstr
+scoped syntax "i64.load16_s" wat_memarg₂ : wat_plaininstr
+scoped syntax "i64.load16_u" wat_memarg₂ : wat_plaininstr
+scoped syntax "i64.load32_s" wat_memarg₄ : wat_plaininstr
+scoped syntax "i64.load32_u" wat_memarg₄ : wat_plaininstr
+scoped syntax "i32.store" wat_memarg₄    : wat_plaininstr
+scoped syntax "i64.store" wat_memarg₈    : wat_plaininstr
+scoped syntax "f32.store" wat_memarg₄    : wat_plaininstr
+scoped syntax "f64.store" wat_memarg₈    : wat_plaininstr
+scoped syntax "i32.store8" wat_memarg₁   : wat_plaininstr
+scoped syntax "i32.store16" wat_memarg₂  : wat_plaininstr
+scoped syntax "i64.store8" wat_memarg₁   : wat_plaininstr
+scoped syntax "i64.store16" wat_memarg₂  : wat_plaininstr
+scoped syntax "i64.store32" wat_memarg₄  : wat_plaininstr
+scoped syntax "memory.size"              : wat_plaininstr
+scoped syntax "memory.grow"              : wat_plaininstr
+scoped syntax "memory.fill"              : wat_plaininstr
+scoped syntax "memory.copy"              : wat_plaininstr
+scoped syntax "memory.init" wat_dataidx  : wat_plaininstr
+scoped syntax "data.drop" wat_dataidx    : wat_plaininstr
 
 -- Numeric (todo floats)
-syntax "i32.const" wat_i32 : wat_plaininstr
-syntax "i64.const" wat_i64 : wat_plaininstr
--- syntax "f32.const" wat_f32 : wat_plaininstr
--- syntax "f64.const" wat_f64 : wat_plaininstr
+scoped syntax "i32.const" wat_i32 : wat_plaininstr
+scoped syntax "i64.const" wat_i64 : wat_plaininstr
+-- scoped syntax "f32.const" wat_f32 : wat_plaininstr
+-- scoped syntax "f64.const" wat_f64 : wat_plaininstr
 
-syntax "i32.clz"    : wat_plaininstr
-syntax "i32.ctz"    : wat_plaininstr
-syntax "i32.popcnt" : wat_plaininstr
-syntax "i32.add"    : wat_plaininstr
-syntax "i32.sub"    : wat_plaininstr
-syntax "i32.mul"    : wat_plaininstr
-syntax "i32.div_s"  : wat_plaininstr
-syntax "i32.div_u"  : wat_plaininstr
-syntax "i32.rem_s"  : wat_plaininstr
-syntax "i32.rem_u"  : wat_plaininstr
-syntax "i32.and"    : wat_plaininstr
-syntax "i32.or"     : wat_plaininstr
-syntax "i32.xor"    : wat_plaininstr
-syntax "i32.shl"    : wat_plaininstr
-syntax "i32.shr_s"  : wat_plaininstr
-syntax "i32.shr_u"  : wat_plaininstr
-syntax "i32.rotl"   : wat_plaininstr
-syntax "i32.rotr"   : wat_plaininstr
+scoped syntax "i32.clz"    : wat_plaininstr
+scoped syntax "i32.ctz"    : wat_plaininstr
+scoped syntax "i32.popcnt" : wat_plaininstr
+scoped syntax "i32.add"    : wat_plaininstr
+scoped syntax "i32.sub"    : wat_plaininstr
+scoped syntax "i32.mul"    : wat_plaininstr
+scoped syntax "i32.div_s"  : wat_plaininstr
+scoped syntax "i32.div_u"  : wat_plaininstr
+scoped syntax "i32.rem_s"  : wat_plaininstr
+scoped syntax "i32.rem_u"  : wat_plaininstr
+scoped syntax "i32.and"    : wat_plaininstr
+scoped syntax "i32.or"     : wat_plaininstr
+scoped syntax "i32.xor"    : wat_plaininstr
+scoped syntax "i32.shl"    : wat_plaininstr
+scoped syntax "i32.shr_s"  : wat_plaininstr
+scoped syntax "i32.shr_u"  : wat_plaininstr
+scoped syntax "i32.rotl"   : wat_plaininstr
+scoped syntax "i32.rotr"   : wat_plaininstr
 
-syntax "i64.clz"    : wat_plaininstr
-syntax "i64.ctz"    : wat_plaininstr
-syntax "i64.popcnt" : wat_plaininstr
-syntax "i64.add"    : wat_plaininstr
-syntax "i64.sub"    : wat_plaininstr
-syntax "i64.mul"    : wat_plaininstr
-syntax "i64.div_s"  : wat_plaininstr
-syntax "i64.div_u"  : wat_plaininstr
-syntax "i64.rem_s"  : wat_plaininstr
-syntax "i64.rem_u"  : wat_plaininstr
-syntax "i64.and"    : wat_plaininstr
-syntax "i64.or"     : wat_plaininstr
-syntax "i64.xor"    : wat_plaininstr
-syntax "i64.shl"    : wat_plaininstr
-syntax "i64.shr_s"  : wat_plaininstr
-syntax "i64.shr_u"  : wat_plaininstr
-syntax "i64.rotl"   : wat_plaininstr
-syntax "i64.rotr"   : wat_plaininstr
+scoped syntax "i64.clz"    : wat_plaininstr
+scoped syntax "i64.ctz"    : wat_plaininstr
+scoped syntax "i64.popcnt" : wat_plaininstr
+scoped syntax "i64.add"    : wat_plaininstr
+scoped syntax "i64.sub"    : wat_plaininstr
+scoped syntax "i64.mul"    : wat_plaininstr
+scoped syntax "i64.div_s"  : wat_plaininstr
+scoped syntax "i64.div_u"  : wat_plaininstr
+scoped syntax "i64.rem_s"  : wat_plaininstr
+scoped syntax "i64.rem_u"  : wat_plaininstr
+scoped syntax "i64.and"    : wat_plaininstr
+scoped syntax "i64.or"     : wat_plaininstr
+scoped syntax "i64.xor"    : wat_plaininstr
+scoped syntax "i64.shl"    : wat_plaininstr
+scoped syntax "i64.shr_s"  : wat_plaininstr
+scoped syntax "i64.shr_u"  : wat_plaininstr
+scoped syntax "i64.rotl"   : wat_plaininstr
+scoped syntax "i64.rotr"   : wat_plaininstr
 
-syntax "f32.abs"      : wat_plaininstr
-syntax "f32.neg"      : wat_plaininstr
-syntax "f32.ceil"     : wat_plaininstr
-syntax "f32.floor"    : wat_plaininstr
-syntax "f32.trunc"    : wat_plaininstr
-syntax "f32.nearest"  : wat_plaininstr
-syntax "f32.sqrt"     : wat_plaininstr
-syntax "f32.add"      : wat_plaininstr
-syntax "f32.sub"      : wat_plaininstr
-syntax "f32.mul"      : wat_plaininstr
-syntax "f32.div"      : wat_plaininstr
-syntax "f32.min"      : wat_plaininstr
-syntax "f32.max"      : wat_plaininstr
-syntax "f32.copysign" : wat_plaininstr
+scoped syntax "f32.abs"      : wat_plaininstr
+scoped syntax "f32.neg"      : wat_plaininstr
+scoped syntax "f32.ceil"     : wat_plaininstr
+scoped syntax "f32.floor"    : wat_plaininstr
+scoped syntax "f32.trunc"    : wat_plaininstr
+scoped syntax "f32.nearest"  : wat_plaininstr
+scoped syntax "f32.sqrt"     : wat_plaininstr
+scoped syntax "f32.add"      : wat_plaininstr
+scoped syntax "f32.sub"      : wat_plaininstr
+scoped syntax "f32.mul"      : wat_plaininstr
+scoped syntax "f32.div"      : wat_plaininstr
+scoped syntax "f32.min"      : wat_plaininstr
+scoped syntax "f32.max"      : wat_plaininstr
+scoped syntax "f32.copysign" : wat_plaininstr
 
-syntax "f64.abs"      : wat_plaininstr
-syntax "f64.neg"      : wat_plaininstr
-syntax "f64.ceil"     : wat_plaininstr
-syntax "f64.floor"    : wat_plaininstr
-syntax "f64.trunc"    : wat_plaininstr
-syntax "f64.nearest"  : wat_plaininstr
-syntax "f64.sqrt"     : wat_plaininstr
-syntax "f64.add"      : wat_plaininstr
-syntax "f64.sub"      : wat_plaininstr
-syntax "f64.mul"      : wat_plaininstr
-syntax "f64.div"      : wat_plaininstr
-syntax "f64.min"      : wat_plaininstr
-syntax "f64.max"      : wat_plaininstr
-syntax "f64.copysign" : wat_plaininstr
+scoped syntax "f64.abs"      : wat_plaininstr
+scoped syntax "f64.neg"      : wat_plaininstr
+scoped syntax "f64.ceil"     : wat_plaininstr
+scoped syntax "f64.floor"    : wat_plaininstr
+scoped syntax "f64.trunc"    : wat_plaininstr
+scoped syntax "f64.nearest"  : wat_plaininstr
+scoped syntax "f64.sqrt"     : wat_plaininstr
+scoped syntax "f64.add"      : wat_plaininstr
+scoped syntax "f64.sub"      : wat_plaininstr
+scoped syntax "f64.mul"      : wat_plaininstr
+scoped syntax "f64.div"      : wat_plaininstr
+scoped syntax "f64.min"      : wat_plaininstr
+scoped syntax "f64.max"      : wat_plaininstr
+scoped syntax "f64.copysign" : wat_plaininstr
 
-syntax "i32.eqz"  : wat_plaininstr
-syntax "i32.eq"   : wat_plaininstr
-syntax "i32.ne"   : wat_plaininstr
-syntax "i32.lt_s" : wat_plaininstr
-syntax "i32.lt_u" : wat_plaininstr
-syntax "i32.gt_s" : wat_plaininstr
-syntax "i32.gt_u" : wat_plaininstr
-syntax "i32.le_s" : wat_plaininstr
-syntax "i32.le_u" : wat_plaininstr
-syntax "i32.ge_s" : wat_plaininstr
-syntax "i32.ge_u" : wat_plaininstr
+scoped syntax "i32.eqz"  : wat_plaininstr
+scoped syntax "i32.eq"   : wat_plaininstr
+scoped syntax "i32.ne"   : wat_plaininstr
+scoped syntax "i32.lt_s" : wat_plaininstr
+scoped syntax "i32.lt_u" : wat_plaininstr
+scoped syntax "i32.gt_s" : wat_plaininstr
+scoped syntax "i32.gt_u" : wat_plaininstr
+scoped syntax "i32.le_s" : wat_plaininstr
+scoped syntax "i32.le_u" : wat_plaininstr
+scoped syntax "i32.ge_s" : wat_plaininstr
+scoped syntax "i32.ge_u" : wat_plaininstr
 
-syntax "i64.eqz"  : wat_plaininstr
-syntax "i64.eq"   : wat_plaininstr
-syntax "i64.ne"   : wat_plaininstr
-syntax "i64.lt_s" : wat_plaininstr
-syntax "i64.lt_u" : wat_plaininstr
-syntax "i64.gt_s" : wat_plaininstr
-syntax "i64.gt_u" : wat_plaininstr
-syntax "i64.le_s" : wat_plaininstr
-syntax "i64.le_u" : wat_plaininstr
-syntax "i64.ge_s" : wat_plaininstr
-syntax "i64.ge_u" : wat_plaininstr
+scoped syntax "i64.eqz"  : wat_plaininstr
+scoped syntax "i64.eq"   : wat_plaininstr
+scoped syntax "i64.ne"   : wat_plaininstr
+scoped syntax "i64.lt_s" : wat_plaininstr
+scoped syntax "i64.lt_u" : wat_plaininstr
+scoped syntax "i64.gt_s" : wat_plaininstr
+scoped syntax "i64.gt_u" : wat_plaininstr
+scoped syntax "i64.le_s" : wat_plaininstr
+scoped syntax "i64.le_u" : wat_plaininstr
+scoped syntax "i64.ge_s" : wat_plaininstr
+scoped syntax "i64.ge_u" : wat_plaininstr
 
-syntax "f32.eq" : wat_plaininstr
-syntax "f32.ne" : wat_plaininstr
-syntax "f32.lt" : wat_plaininstr
-syntax "f32.gt" : wat_plaininstr
-syntax "f32.le" : wat_plaininstr
-syntax "f32.ge" : wat_plaininstr
+scoped syntax "f32.eq" : wat_plaininstr
+scoped syntax "f32.ne" : wat_plaininstr
+scoped syntax "f32.lt" : wat_plaininstr
+scoped syntax "f32.gt" : wat_plaininstr
+scoped syntax "f32.le" : wat_plaininstr
+scoped syntax "f32.ge" : wat_plaininstr
 
-syntax "f64.eq" : wat_plaininstr
-syntax "f64.ne" : wat_plaininstr
-syntax "f64.lt" : wat_plaininstr
-syntax "f64.gt" : wat_plaininstr
-syntax "f64.le" : wat_plaininstr
-syntax "f64.ge" : wat_plaininstr
+scoped syntax "f64.eq" : wat_plaininstr
+scoped syntax "f64.ne" : wat_plaininstr
+scoped syntax "f64.lt" : wat_plaininstr
+scoped syntax "f64.gt" : wat_plaininstr
+scoped syntax "f64.le" : wat_plaininstr
+scoped syntax "f64.ge" : wat_plaininstr
 
-syntax "i32.wrap_i64"        : wat_plaininstr
-syntax "i32.trunc_f32_s"     : wat_plaininstr
-syntax "i32.trunc_f32_u"     : wat_plaininstr
-syntax "i32.trunc_f64_s"     : wat_plaininstr
-syntax "i32.trunc_f64_u"     : wat_plaininstr
-syntax "i32.trunc_sat_f32_s" : wat_plaininstr
-syntax "i32.trunc_sat_f32_u" : wat_plaininstr
-syntax "i32.trunc_sat_f64_s" : wat_plaininstr
-syntax "i32.trunc_sat_f64_u" : wat_plaininstr
-syntax "i64.extend_i32_s"    : wat_plaininstr
-syntax "i64.extend_i32_u"    : wat_plaininstr
-syntax "i64.trunc_f32_s"     : wat_plaininstr
-syntax "i64.trunc_f32_u"     : wat_plaininstr
-syntax "i64.trunc_f64_s"     : wat_plaininstr
-syntax "i64.trunc_f64_u"     : wat_plaininstr
-syntax "i64.trunc_sat_f32_s" : wat_plaininstr
-syntax "i64.trunc_sat_f32_u" : wat_plaininstr
-syntax "i64.trunc_sat_f64_s" : wat_plaininstr
-syntax "i64.trunc_sat_f64_u" : wat_plaininstr
-syntax "f32.convert_i32_s"   : wat_plaininstr
-syntax "f32.convert_i32_u"   : wat_plaininstr
-syntax "f32.convert_i64_s"   : wat_plaininstr
-syntax "f32.convert_i64_u"   : wat_plaininstr
-syntax "f32.demote_f64"      : wat_plaininstr
-syntax "f64.convert_i32_s"   : wat_plaininstr
-syntax "f64.convert_i32_u"   : wat_plaininstr
-syntax "f64.convert_i64_s"   : wat_plaininstr
-syntax "f64.convert_i64_u"   : wat_plaininstr
-syntax "f64.promote_f32"     : wat_plaininstr
-syntax "i32.reinterpret_f32" : wat_plaininstr
-syntax "i64.reinterpret_f64" : wat_plaininstr
-syntax "f32.reinterpret_i32" : wat_plaininstr
-syntax "f64.reinterpret_i64" : wat_plaininstr
+scoped syntax "i32.wrap_i64"        : wat_plaininstr
+scoped syntax "i32.trunc_f32_s"     : wat_plaininstr
+scoped syntax "i32.trunc_f32_u"     : wat_plaininstr
+scoped syntax "i32.trunc_f64_s"     : wat_plaininstr
+scoped syntax "i32.trunc_f64_u"     : wat_plaininstr
+scoped syntax "i32.trunc_sat_f32_s" : wat_plaininstr
+scoped syntax "i32.trunc_sat_f32_u" : wat_plaininstr
+scoped syntax "i32.trunc_sat_f64_s" : wat_plaininstr
+scoped syntax "i32.trunc_sat_f64_u" : wat_plaininstr
+scoped syntax "i64.extend_i32_s"    : wat_plaininstr
+scoped syntax "i64.extend_i32_u"    : wat_plaininstr
+scoped syntax "i64.trunc_f32_s"     : wat_plaininstr
+scoped syntax "i64.trunc_f32_u"     : wat_plaininstr
+scoped syntax "i64.trunc_f64_s"     : wat_plaininstr
+scoped syntax "i64.trunc_f64_u"     : wat_plaininstr
+scoped syntax "i64.trunc_sat_f32_s" : wat_plaininstr
+scoped syntax "i64.trunc_sat_f32_u" : wat_plaininstr
+scoped syntax "i64.trunc_sat_f64_s" : wat_plaininstr
+scoped syntax "i64.trunc_sat_f64_u" : wat_plaininstr
+scoped syntax "f32.convert_i32_s"   : wat_plaininstr
+scoped syntax "f32.convert_i32_u"   : wat_plaininstr
+scoped syntax "f32.convert_i64_s"   : wat_plaininstr
+scoped syntax "f32.convert_i64_u"   : wat_plaininstr
+scoped syntax "f32.demote_f64"      : wat_plaininstr
+scoped syntax "f64.convert_i32_s"   : wat_plaininstr
+scoped syntax "f64.convert_i32_u"   : wat_plaininstr
+scoped syntax "f64.convert_i64_s"   : wat_plaininstr
+scoped syntax "f64.convert_i64_u"   : wat_plaininstr
+scoped syntax "f64.promote_f32"     : wat_plaininstr
+scoped syntax "i32.reinterpret_f32" : wat_plaininstr
+scoped syntax "i64.reinterpret_f64" : wat_plaininstr
+scoped syntax "f32.reinterpret_i32" : wat_plaininstr
+scoped syntax "f64.reinterpret_i64" : wat_plaininstr
 
-syntax "i32.extend8_s"  : wat_plaininstr
-syntax "i32.extend16_s" : wat_plaininstr
-syntax "i64.extend8_s"  : wat_plaininstr
-syntax "i64.extend16_s" : wat_plaininstr
-syntax "i64.extend32_s" : wat_plaininstr
+scoped syntax "i32.extend8_s"  : wat_plaininstr
+scoped syntax "i32.extend16_s" : wat_plaininstr
+scoped syntax "i64.extend8_s"  : wat_plaininstr
+scoped syntax "i64.extend16_s" : wat_plaininstr
+scoped syntax "i64.extend32_s" : wat_plaininstr
 
 -- todo vector instruction :)
 
-syntax "[wat_plaininstr|" wat_plaininstr "]" : term
+scoped syntax "[wat_plaininstr|" wat_plaininstr "]" : term
 
 macro_rules
 | `([wat_plaininstr| unreachable]) => `(Plain.unreachable)
@@ -650,10 +650,10 @@ macro_rules
 | `([wat_plaininstr| i64.extend32_s]) => `(int64 (.extend32_s))
 
 declare_syntax_cat wat_blocktype
-syntax wat_result ? : wat_blocktype
-syntax wat_typeuse  : wat_blocktype
+scoped syntax wat_result ? : wat_blocktype
+scoped syntax wat_typeuse  : wat_blocktype
 
-syntax "[wat_blocktype|" wat_blocktype "]" : term
+scoped syntax "[wat_blocktype|" wat_blocktype "]" : term
 
 macro_rules
 | `([wat_blocktype| ]) => `(Instr.BlockType.value .none)
@@ -665,18 +665,18 @@ macro_rules
 declare_syntax_cat wat_blockinstr
 declare_syntax_cat wat_instr
 
-syntax wat_plaininstr : wat_instr
-syntax wat_blockinstr : wat_instr
-syntax "(" wat_instr ")" : wat_instr
+scoped syntax wat_plaininstr : wat_instr
+scoped syntax wat_blockinstr : wat_instr
+scoped syntax "(" wat_instr ")" : wat_instr
 
-syntax "block" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
-syntax "loop" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
-syntax "if" wat_label wat_blocktype (wat_instr)* "else" wat_ident? (wat_instr)* "end" wat_ident? : wat_blockinstr
-syntax "if" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
+scoped syntax "block" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
+scoped syntax "loop" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
+scoped syntax "if" wat_label wat_blocktype (wat_instr)* "else" wat_ident? (wat_instr)* "end" wat_ident? : wat_blockinstr
+scoped syntax "if" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
 
-syntax "[wat_blockinstr|" wat_blockinstr "]" : term
-syntax "[wat_instr|" wat_instr "]"           : term
-syntax "[wat_instr_list|" wat_instr* "]"     : term
+scoped syntax "[wat_blockinstr|" wat_blockinstr "]" : term
+scoped syntax "[wat_instr|" wat_instr "]"           : term
+scoped syntax "[wat_instr_list|" wat_instr* "]"     : term
 
 macro_rules
 | `([wat_instr| $i:wat_plaininstr]) => `(Instr.plain [wat_plaininstr| $i])
@@ -718,17 +718,17 @@ macro_rules
 /-
 declare_syntax_cat wat_foldedinstr
 declare_syntax_cat wat_foldedinstr_at
-syntax "(" wat_foldedinstr_at ")" : wat_foldedinstr
-syntax "(" wat_foldedinstr_at "(" wat_foldedinstr_at ")" ")" : wat_foldedinstr
+scoped syntax "(" wat_foldedinstr_at ")" : wat_foldedinstr
+scoped syntax "(" wat_foldedinstr_at "(" wat_foldedinstr_at ")" ")" : wat_foldedinstr
 
-syntax wat_plaininstr wat_foldedinstr : wat_foldedinstr_at
-syntax "block" wat_label wat_blocktype wat_instr* : wat_foldedinstr_at
-syntax "loop" wat_label wat_blocktype wat_instr* : wat_foldedinstr_at
-syntax "if" wat_label wat_blocktype wat_foldedinstr "(" "then" wat_instr* ")"
+scoped syntax wat_plaininstr wat_foldedinstr : wat_foldedinstr_at
+scoped syntax "block" wat_label wat_blocktype wat_instr* : wat_foldedinstr_at
+scoped syntax "loop" wat_label wat_blocktype wat_instr* : wat_foldedinstr_at
+scoped syntax "if" wat_label wat_blocktype wat_foldedinstr "(" "then" wat_instr* ")"
           ("(" "else" wat_instr* ")")? : wat_foldedinstr_at
 
-syntax "[wat_foldedinstr_at|" wat_foldedinstr_at "]" : term
-syntax "[wat_foldedinstr|" wat_foldedinstr "]" : term
+scoped syntax "[wat_foldedinstr_at|" wat_foldedinstr_at "]" : term
+scoped syntax "[wat_foldedinstr|" wat_foldedinstr "]" : term
 
 macro_rules
 | `([wat_foldedinstr| ($i)]) => `([wat_foldedinstr_at| $i])
@@ -750,26 +750,16 @@ macro_rules
     `([wat_foldedinstr| $cond]
     ++ [[wat_instr| if $l $bt $is₁* else $is₂:wat_instr* end]])
 
-syntax wat_foldedinstr : wat_instr
-syntax "(" wat_instr ")" : wat_instr
+scoped syntax wat_foldedinstr : wat_instr
+scoped syntax "(" wat_instr ")" : wat_instr
 macro_rules
 | `([wat_instr| $i:wat_foldedinstr]) => `([wat_foldedinstr| $i])
 | `([wat_instr| ($i:wat_instr)]) => `([wat_instr| $i])
 -/
 
 declare_syntax_cat wat_expr
-syntax wat_instr* : wat_expr
-syntax "[wat_expr|" wat_expr "]" : term
+scoped syntax wat_instr* : wat_expr
+scoped syntax "[wat_expr|" wat_expr "]" : term
 
 macro_rules
 | `([wat_expr| $is:wat_instr*]) => `([wat_instr_list| $is*])
-
-def test := [wat_expr|
-    i32.const 2
-    call calloc
-    local.tee 1
-    local.get 0
-    i32.store8
-  ]
-
-#eval test
