@@ -667,10 +667,10 @@ macro_rules
 declare_syntax_cat wat_blockinstr
 declare_syntax_cat wat_instr
 
-scoped syntax wat_plaininstr    : wat_instr
-scoped syntax wat_blockinstr    : wat_instr
-scoped syntax "(" wat_instr ")" : wat_instr
-syntax "↑" term:max             : wat_instr
+scoped syntax wat_plaininstr     : wat_instr
+scoped syntax wat_blockinstr     : wat_instr
+scoped syntax "(" wat_instr ")"  : wat_instr
+scoped syntax "↑" term:max       : wat_instr
 
 scoped syntax "block" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
 scoped syntax "loop" wat_label wat_blocktype (wat_instr)* "end" wat_ident? : wat_blockinstr
