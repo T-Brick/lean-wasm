@@ -40,8 +40,8 @@ nonrec def Section.ofOpcode [Opcode B] : Bytecode (Section N B) := do
       Bytecode.err_log s!"Parsing section id={N} size={size}." do
       let init ← Bytecode.pos
       let cont : B ← ofOpcode
-      let after ← Bytecode.pos
-      let rsize := Unsigned.ofNat (after - init)
+      let h_after ← Bytecode.pos
+      let rsize := Unsigned.ofNat (h_after - init)
       if size = rsize then return Section.data size cont else
       Bytecode.errMsg s!"Section {N} expected size {size} got {rsize}."
     else return .empty
@@ -312,8 +312,8 @@ nonrec def Code.ofOpcode : Bytecode Code :=
   let size : Unsigned32 ← ofOpcode
   let init ← Bytecode.pos
   let code ← Code.Funcs.ofOpcode
-  let after ← Bytecode.pos
-  let rsize := Unsigned.ofNat (after - init)
+  let h_after ← Bytecode.pos
+  let rsize := Unsigned.ofNat (h_after - init)
   if size = rsize then return ⟨code⟩
   Bytecode.errMsg s!"Code section expected size {size} got {rsize}."
 
