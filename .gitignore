@@ -1,7 +1,4 @@
 .DS_Store
-/build
-/lean_packages/*
-!/lean_packages/manifest.json
 *.wasm
 *.wat
 /.lake

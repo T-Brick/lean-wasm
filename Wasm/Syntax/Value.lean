@@ -45,7 +45,7 @@ theorem Bytes.length_rev : ∀ acc, Bytes.length (reverse.rev bytes acc) = Bytes
     simp [reverse.rev, length_cons, length_fst, Nat.succ_eq_one_add]
   case cons b bs ih =>
     intro acc
-    simp [reverse.rev, ih, length_cons, length_cons, Nat.succ_add_eq_succ_add]
+    simp [reverse.rev, ih, length_cons, length_cons, Nat.succ_add_eq_add_succ]
 
 theorem Bytes.length_reverse : Bytes.length (Bytes.reverse bytes) = Bytes.length bytes := by
   cases bytes <;> simp [reverse]
