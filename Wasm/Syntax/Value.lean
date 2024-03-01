@@ -102,7 +102,7 @@ def Unsigned.toBytes (n : { i // 0 < i }) (v : Unsigned n) : Bytes :=
   else
     let next := ⟨n.val - 8, Nat.zero_lt_sub_of_lt (Nat.lt_of_not_le h)⟩
     .cons (UInt8.ofNat (v.toNat % 256)) (toBytes next (Unsigned.ofNat (v.toNat >>> 8)))
-termination_by toBytes n v => n.val
+termination_by n.val
 decreasing_by
   simp_wf
   apply Nat.lt_iff_le_and_ne.mp (Nat.lt_of_not_le h)

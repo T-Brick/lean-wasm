@@ -94,7 +94,7 @@ def star (p : Bytecode α) : Bytecode (List α) := fun state => do
       | (.error _, _)     => return (.ok [a], state')
     else return (.error ⟨["Illegal backtracking in star."]⟩, state')
   | (.error _, _) => return (.ok [], state)
-termination_by star p s => s.seq.size - s.pos
+termination_by state.seq.size - state.pos
 
 def opt (p : Bytecode α) : Bytecode (Option α) := fun state => do
   match ← p state with
@@ -196,7 +196,10 @@ nonrec def Vec.ofOpcode [inst : Opcode α] : Bytecode (Vec α) :=
   let len : Unsigned32 ← ofOpcode
   Bytecode.err_log s!"Parsing vector length={len}." do
   let vector ← Bytecode.n len.toNat (inst.ofOpcode)
-  return ⟨vector.toList, by simp [Vec.max_length, Unsigned.toNat]⟩
+  return ⟨vector.toList, by
+    simp [Unsigned.toNat]
+    exact len.isLt
+  ⟩
 
 instance [Opcode α] : Opcode (Vec α) := ⟨Vec.toOpcode, Vec.ofOpcode⟩
 

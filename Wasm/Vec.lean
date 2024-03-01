@@ -99,7 +99,7 @@ def join (v : Vec (Vec α)) : Option (Vec α) :=
     if h₂ : res.length + x.length < Vec.max_length then
       return Vec.append x res (by simp [Nat.add_comm] at h₂; exact h₂)
     else none
-termination_by join v => v.length
+termination_by v.length
 
 @[inline] def dropLast (v : Vec α) : Vec α :=
   ⟨ v.list.dropLast, by

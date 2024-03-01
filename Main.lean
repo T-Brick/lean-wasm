@@ -1,7 +1,7 @@
 import Wasm
 import Cli
 
-def version := "0.0.2"
+def version := "24.02.2"
 
 open Cli
 

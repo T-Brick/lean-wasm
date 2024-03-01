@@ -270,7 +270,10 @@ structure Code where
 
 def Code.Locals.toVec (locals : Code.Locals) : Vec Typ.Val :=
   let lst := List.ofFn (fun (_ : Fin locals.n.toNat) => locals.t)
-  ⟨lst, by simp [List.length_ofFn, Vec.max_length, Unsigned.toNat]⟩
+  ⟨lst, by
+    simp [List.length_ofFn, Vec.max_length, Unsigned.toNat]
+    exact locals.n.isLt
+  ⟩
 
 def Code.dataidx (c : Code) : List Index.Data :=
   let (ins, _) := c.code.expr

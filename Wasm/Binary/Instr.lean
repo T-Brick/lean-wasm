@@ -765,14 +765,15 @@ def Instr.toOpcode : Wasm.Syntax.Instr → ByteSeq
   | .call f                   => 0x10 :: Wasm.Binary.Opcode.toOpcode f
   | .call_indirect x y        =>
     0x11 :: Wasm.Binary.Opcode.toOpcode y ++ Wasm.Binary.Opcode.toOpcode x
+termination_by i => sizeOf i
 
 def Instr.listToOpcode : List Wasm.Syntax.Instr → ByteSeq
   | [] => []
   | i :: is => Instr.toOpcode i ++ listToOpcode is
+termination_by is => sizeOf is
+
 end
-termination_by
-  Instr.toOpcode i      => sizeOf i
-  Instr.listToOpcode is => sizeOf is
+
 
 mutual
 private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
@@ -887,6 +888,7 @@ private def Instr.ofOpcodeAux (max pos : Nat) : Bytecode Wasm.Syntax.Instr :=
   <|> (return (Instr.globl                  ) (← Global.ofOpcode))
   <|> (return (Instr.table                  ) (← Table.ofOpcode))
   <|> (return (Instr.memory                 ) (← Memory.ofOpcode))
+termination_by max - pos
 
 def Instr.listOfOpcodeAux (max pos : Nat)
     : Bytecode (List Wasm.Syntax.Instr) := do
@@ -916,10 +918,10 @@ def Instr.listOfOpcodeAux (max pos : Nat)
 
         let is ← Instr.listOfOpcodeAux max pos'
         return i :: is
+termination_by max - pos
+
 end
-termination_by
-  Instr.ofOpcodeAux m p     => m - p
-  Instr.listOfOpcodeAux m p => m - p
+
 
 def Instr.ofOpcode : Bytecode Wasm.Syntax.Instr := do
   Instr.ofOpcodeAux (← get).seq.size (← Bytecode.pos)

@@ -185,15 +185,14 @@ def Instr.ofSyntaxInstr : Syntax.Instr → Instr
   | .wasm_return          => .plain (.wasm_return)
   | .call f               => .plain (.call f)
   | .call_indirect f t    => .plain (.call_indirect f (.type_ind t))
+termination_by i => sizeOf i
 
 def Instr.ofSyntaxInstrList : List Syntax.Instr → List Instr
   | [] => []
   | i :: is => Instr.ofSyntaxInstr i :: ofSyntaxInstrList is
+termination_by is => sizeOf is
 
 end
-termination_by
-  Instr.ofSyntaxInstr i => sizeOf i
-  Instr.ofSyntaxInstrList is => sizeOf is
 
 instance : Coe Syntax.Instr Instr := ⟨Instr.ofSyntaxInstr⟩
 instance : Coe Instr.Plain Instr := ⟨Instr.plain⟩
@@ -440,22 +439,21 @@ def Block.toString : Instr.Block → String
     let ins := listToString ins |>.replace "\n" "\n    "
     let ins' := listToString ins' |>.replace "\n" "\n    "
     s!"(if {lbl} {bt}\n  (then\n    {ins}\n  ) (else\n    {ins'}\n  )\n)"
+termination_by i => sizeOf i
 
 def toString : Instr → String
   | .plain i   => Plain.toString i
   | .block i   => Block.toString i
   | .comment s => s!"(; {s} ;)"
+termination_by i => sizeOf i
 
 def listToString : List Instr → String
   | []      => ""
   | i :: [] => toString i
   | i :: is => toString i ++ "\n" ++ listToString is
+termination_by is => sizeOf is
 
 end
-termination_by
-  Block.toString i => sizeOf i
-  Instr.toString i => sizeOf i
-  Instr.listToString is => sizeOf is
 
 instance : ToString Instr.Block         := ⟨Instr.Block.toString⟩
 instance : ToString Instr               := ⟨Instr.toString⟩
