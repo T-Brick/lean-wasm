@@ -16,7 +16,7 @@ lean_exe wasm {
 
 -- require std from git "https://github.com/leanprover/std4" @ "main"
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.6.0-rc1"
+  "https://github.com/leanprover-community/mathlib4" @ "v4.6.0"
 require Cli from git "https://github.com/mhuisi/lean4-cli" @ "nightly"
 require numbers from git
-  "https://github.com/T-Brick/Numbers" @ "v24.02.1"
+  "https://github.com/T-Brick/Numbers" @ "main"
