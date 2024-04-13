@@ -1,6 +1,5 @@
 /- https://webassembly.github.io/spec/core/valid/modules.html -/
 
-import Mathlib.Data.List.BigOperators.Basic
 import Mathlib.Data.List.Join
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Index

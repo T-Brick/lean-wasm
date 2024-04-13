@@ -271,8 +271,7 @@ structure Code where
 def Code.Locals.toVec (locals : Code.Locals) : Vec Typ.Val :=
   let lst := List.ofFn (fun (_ : Fin locals.n.toNat) => locals.t)
   ⟨lst, by
-    simp [List.length_ofFn, Vec.max_length, Unsigned.toNat]
-    exact locals.n.isLt
+    simp [List.length_ofFn, Vec.max_length, Unsigned.toNat, lst]
   ⟩
 
 def Code.dataidx (c : Code) : List Index.Data :=
@@ -463,9 +462,9 @@ nonrec def ofOpcode : Bytecode Module :=
       | .data _ typeidx =>
         match cs : codesec with
         | .data _ vcode =>
-          let code := vcode.get (cast (by simp [eq_nn', cs]) i)
+          let code := vcode.get (cast (by simp [eq_nn', cs, n']) i)
 
-          ⟨ typeidx.get (cast (by simp [Vec.length, fs]) i)
+          ⟨ typeidx.get (cast (by simp [Vec.length, fs, n]) i)
           , code.code.locals
           , code.code.expr
           ⟩

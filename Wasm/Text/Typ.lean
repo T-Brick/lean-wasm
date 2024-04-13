@@ -5,7 +5,6 @@ import Wasm.Vec
 import Wasm.Syntax.Typ
 import Wasm.Text.Ident
 import Wasm.Text.Trans
-import Std.Lean.Format
 
 namespace Wasm
 
