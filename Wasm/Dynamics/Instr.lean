@@ -1,5 +1,5 @@
+import Wasm.Syntax
 import Wasm.Dynamics.Address
-import Wasm.Syntax.Instr
 
 namespace Wasm.Dynamics
 

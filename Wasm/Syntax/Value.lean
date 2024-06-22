@@ -42,7 +42,14 @@ where rev (bytes acc : Bytes) : Bytes :=
 theorem Bytes.length_rev : ∀ acc, Bytes.length (reverse.rev bytes acc) = Bytes.length bytes + Bytes.length acc := by
   induction bytes
   case fst b =>
-    simp [reverse.rev, length_cons, length_fst, Nat.succ_eq_one_add]
+    exact fun acc => by
+      simp only [
+        reverse.rev,
+        length_cons,
+        Nat.succ_eq_add_one,
+        length_fst,
+        Nat.add_comm
+      ]
   case cons b bs ih =>
     intro acc
     simp [reverse.rev, ih, length_cons, length_cons, Nat.succ_add_eq_add_succ]
@@ -126,7 +133,7 @@ structure Name where
 
 end Syntax.Value
 
-theorem Vec.index (v : Vec α) (i : Fin v.length) : Unsigned32 := by
+def Vec.index (v : Vec α) (i : Fin v.length) : Unsigned32 := by
   have h := i.isLt
   have h' := v.maxLen
   have h'' := Nat.lt_trans h h'

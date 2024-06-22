@@ -1,9 +1,7 @@
 import Wasm.Vec
+import Wasm.Syntax
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Value
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Value
-import Wasm.Syntax.Module
 
 namespace Wasm.Dynamics.Instance
 

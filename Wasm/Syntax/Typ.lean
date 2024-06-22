@@ -1,10 +1,12 @@
 /- Encoding of defintion WASM's type defintion:
     https://webassembly.github.io/spec/core/syntax/types.html
 -/
+import Numbers
 import Wasm.Vec
-import Wasm.Binary.Opcode
 
 namespace Wasm.Syntax.Typ
+
+open Numbers
 
 inductive Num
 | i32

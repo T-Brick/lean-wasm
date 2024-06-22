@@ -1,11 +1,7 @@
 /- https://webassembly.github.io/spec/core/valid/modules.html -/
 
+import Wasm.Syntax
 import Mathlib.Data.List.Join
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Index
-import Wasm.Syntax.Value
-import Wasm.Syntax.Instr
-import Wasm.Syntax.Module
 import Wasm.Validation.Context
 import Wasm.Validation.Typ
 import Wasm.Validation.Statics

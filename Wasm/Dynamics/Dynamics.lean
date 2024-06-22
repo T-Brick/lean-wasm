@@ -1,4 +1,5 @@
 import Wasm.Vec
+import Wasm.Syntax
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Value
 import Wasm.Dynamics.Instance
@@ -6,9 +7,6 @@ import Wasm.Dynamics.Stack
 import Wasm.Dynamics.Evaluation
 import Wasm.Dynamics.Context
 import Wasm.Dynamics.Instr
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Value
-import Wasm.Syntax.Instr
 import Numbers
 open Numbers
 
@@ -57,52 +55,77 @@ def ibinop {nn : Numeric.Size}
 
 
 inductive Binop : Step
-| add     : Binop (s, (f, ibinop .add :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (c₁ + c₂) :: is))
-| sub     : Binop (s, (f, ibinop .sub :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (c₁ - c₂) :: is))
-| mul     : Binop (s, (f, ibinop .mul :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (c₁ * c₂) :: is))
-| div_u_t : Unsigned.divOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.div .u) :: const c₂ :: const c₁ :: is))
-                  (s, (f, .admin .trap :: is))
-| div_u   : Unsigned.divOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.div .u) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const c :: is))
-| div_s_t : Signed.divOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.div .s) :: const c₂ :: const c₁ :: is))
-                  (s, (f, .admin .trap :: is))
-| div_s   : Signed.divOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.div .s) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const c :: is))
-| rem_u_t : Unsigned.remOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
-                  (s, (f, .admin .trap :: is))
-| rem_u   : Unsigned.remOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const c :: is))
-| rem_s_t : Signed.remOpt c₁ c₂ = .none
-          → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
-                  (s, (f, .admin .trap :: is))
-| rem_s   : Signed.remOpt c₁ c₂ = .some c
-          → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const c :: is))
-| and     : Binop (s, (f, ibinop .and :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.and c₁ c₂) :: is))
-| or      : Binop (s, (f, ibinop .or :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.or c₁ c₂) :: is))
-| xor     : Binop (s, (f, ibinop .xor :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.xor c₁ c₂) :: is))
-| shl     : Binop (s, (f, ibinop .shl :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.shl c₁ c₂) :: is))
-| shr_u   : Binop (s, (f, ibinop (.shr .u) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.shr c₁ c₂) :: is))
-| shr_s   : Binop (s, (f, ibinop (.shr .s) :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Signed.shr c₁ c₂) :: is))
-| rotl    : Binop (s, (f, ibinop .rotl :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.rotl c₁ c₂) :: is))
-| rotr    : Binop (s, (f, ibinop .rotr :: const c₂ :: const c₁ :: is))
-                  (s, (f, const (Unsigned.rotr c₁ c₂) :: is))
+| add
+  : {nn : Numeric.Size}
+  → {c₁ c₂ : Unsigned nn.toBits}
+  → Binop (s, (f, ibinop .add :: const c₂ :: const c₁ :: is))
+          (s, (f, const (c₁ + c₂) :: is))
+| sub
+  : {nn : Numeric.Size}
+  → {c₁ c₂ : Unsigned nn.toBits}
+  → Binop (s, (f, ibinop .sub :: const c₂ :: const c₁ :: is))
+          (s, (f, const (c₁ - c₂) :: is))
+| mul
+  : {nn : Numeric.Size}
+  → {c₁ c₂ : Unsigned nn.toBits}
+  → Binop (s, (f, ibinop .mul :: const c₂ :: const c₁ :: is))
+          (s, (f, const (c₁ * c₂) :: is))
+| div_u_t
+  : Unsigned.divOpt c₁ c₂ = .none
+  → Binop (s, (f, ibinop (.div .u) :: const c₂ :: const c₁ :: is))
+          (s, (f, .admin .trap :: is))
+| div_u
+  : Unsigned.divOpt c₁ c₂ = .some c
+  → Binop (s, (f, ibinop (.div .u) :: const c₂ :: const c₁ :: is))
+          (s, (f, const c :: is))
+| div_s_t
+  : Signed.divOpt c₁ c₂ = .none
+  → Binop (s, (f, ibinop (.div .s) :: const c₂ :: const c₁ :: is))
+          (s, (f, .admin .trap :: is))
+| div_s
+  : Signed.divOpt c₁ c₂ = .some c
+  → Binop (s, (f, ibinop (.div .s) :: const c₂ :: const c₁ :: is))
+          (s, (f, const c :: is))
+| rem_u_t
+  : Unsigned.remOpt c₁ c₂ = .none
+  → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
+          (s, (f, .admin .trap :: is))
+| rem_u
+  : Unsigned.remOpt c₁ c₂ = .some c
+  → Binop (s, (f, ibinop (.rem .u) :: const c₂ :: const c₁ :: is))
+          (s, (f, const c :: is))
+| rem_s_t
+  : Signed.remOpt c₁ c₂ = .none
+  → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
+          (s, (f, .admin .trap :: is))
+| rem_s
+  : Signed.remOpt c₁ c₂ = .some c
+  → Binop (s, (f, ibinop (.rem .s) :: const c₂ :: const c₁ :: is))
+          (s, (f, const c :: is))
+| and
+  : Binop (s, (f, ibinop .and :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.and c₁ c₂) :: is))
+| or
+  : Binop (s, (f, ibinop .or :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.or c₁ c₂) :: is))
+| xor
+  : Binop (s, (f, ibinop .xor :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.xor c₁ c₂) :: is))
+| shl
+  : Binop (s, (f, ibinop .shl :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.shl c₁ c₂) :: is))
+| shr_u
+  : Binop (s, (f, ibinop (.shr .u) :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.shr c₁ c₂) :: is))
+| shr_s
+  : Binop (s, (f, ibinop (.shr .s) :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Signed.shr c₁ c₂) :: is))
+| rotl
+  : Binop (s, (f, ibinop .rotl :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.rotl c₁ c₂) :: is))
+| rotr
+  : Binop (s, (f, ibinop .rotr :: const c₂ :: const c₁ :: is))
+          (s, (f, const (Unsigned.rotr c₁ c₂) :: is))
 
 inductive Test : Step
 | eqz : Test (s, (f, int (.test .eqz) :: const c₁ :: is))

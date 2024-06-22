@@ -1,16 +1,13 @@
 /- https://webassembly.github.io/spec/core/valid/types.html -/
-
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Index
-import Wasm.Syntax.Value
-import Wasm.Syntax.Instr
+import Numbers
+import Wasm.Syntax
 import Wasm.Validation.Context
 
 namespace Wasm.Validation.Typ
 
-open Syntax
+open Syntax Numbers
 
-inductive Limit : Syntax.Typ.Limit → UInt32 → Prop
+inductive Limit : Syntax.Typ.Limit → Unsigned32 → Prop
 | minOnly : n ≤ k → Limit ⟨n, .none⟩ k
 | minMax  : n ≤ k → m ≤ k → n ≤ m → Limit ⟨n, .some m⟩ k
 
@@ -29,10 +26,10 @@ inductive Function : Syntax.Typ.Func → Prop
 | func : Function ⟨τ1, τ2⟩
 
 inductive Table : Syntax.Typ.Table → Prop
-| table : Limit limit ((Vec.max_length) - 1 |>.toUInt32) → Table ⟨limit, ref⟩
+| table : Limit limit (Unsigned.ofNat <| Vec.max_length - 1) → Table ⟨limit, ref⟩
 
 inductive Memory : Syntax.Typ.Mem → Prop
-| memory : Limit limit ((Nat.pow 2 16) |>.toUInt32) → Memory limit
+| memory : Limit limit (Unsigned.ofNat (Nat.pow 2 16)) → Memory limit
 
 inductive Global : Syntax.Typ.Global → Prop
 | globl : Global ⟨m, valtype⟩

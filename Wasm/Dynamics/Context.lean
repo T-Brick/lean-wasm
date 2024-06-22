@@ -3,10 +3,7 @@ import Wasm.Dynamics.Address
 import Wasm.Dynamics.Value
 import Wasm.Dynamics.Instance
 import Wasm.Dynamics.Stack
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Value
-import Wasm.Syntax.Module
-import Wasm.Syntax.Index
+import Wasm.Syntax
 
 namespace Wasm.Dynamics.Context
 

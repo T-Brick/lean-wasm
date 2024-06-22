@@ -1,6 +1,8 @@
 import Wasm.Syntax.Typ
 import Wasm.Syntax.Value
 import Wasm.Text.Ident
+import Numbers
+open Numbers
 
 namespace Wasm.Text
 

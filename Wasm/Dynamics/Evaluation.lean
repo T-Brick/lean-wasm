@@ -1,5 +1,5 @@
 import Wasm.Vec
-import Wasm.Syntax.Value
+import Wasm.Syntax
 
 namespace Wasm.Dynamics.Evaluation
 

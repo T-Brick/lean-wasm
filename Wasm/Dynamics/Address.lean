@@ -1,7 +1,9 @@
-import Wasm.Syntax.Value
+import Wasm.Syntax
 import Numbers
 
 namespace Wasm.Dynamics
+
+open Numbers
 
 def Address := Unsigned32
 

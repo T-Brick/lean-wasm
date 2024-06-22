@@ -1,9 +1,9 @@
 import Wasm.Vec
-import Wasm.Syntax.Instr
-import Wasm.Syntax.Typ
+import Wasm.Syntax
 import Wasm.Dynamics.Address
 import Wasm.Dynamics.Instr
 import Numbers
+
 open Numbers
 
 namespace Wasm.Dynamics

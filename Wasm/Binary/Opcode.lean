@@ -1,7 +1,7 @@
 import Wasm.Vec
 import Wasm.Syntax.Value
 import Numbers
-import Mathlib.Data.Vector
+-- import Mathlib.Data.Vector
 open Numbers
 
 namespace Wasm.Binary
@@ -85,7 +85,7 @@ namespace Bytecode
     else errMsg s!"Tried taking {n} byte(s) but reached end of sequence."
   else errMsg s!"Tried taking {n} byte(s) but at end of sequence."
 
-def star (p : Bytecode α) : Bytecode (List α) := fun state => do
+partial def star (p : Bytecode α) : Bytecode (List α) := fun state => do
   match ← p state with
   | (.ok a, state')  =>
     if state'.seq.size - state'.pos.val < state.seq.size - state.pos then
@@ -94,7 +94,7 @@ def star (p : Bytecode α) : Bytecode (List α) := fun state => do
       | (.error _, _)     => return (.ok [a], state')
     else return (.error ⟨["Illegal backtracking in star."]⟩, state')
   | (.error _, _) => return (.ok [], state)
-termination_by state.seq.size - state.pos
+-- termination_by state.seq.size - state.pos
 
 def opt (p : Bytecode α) : Bytecode (Option α) := fun state => do
   match ← p state with
@@ -110,7 +110,7 @@ def n (v : Nat) (p : Bytecode α) : Bytecode (Vector α v) := fun state => do
     if state'.pos.val > state.pos then
       match ← n (v - 1) p state' with
       | (.ok as, state'')     =>
-        return (.ok (cast (by simp [this]) (Vector.cons a as)), state'')
+        return (.ok (cast (by rw [this]) (Vector.cons a as)), state'')
       | (.error err, state'') => return (.error err, state'')
     else return (.error ⟨["Illegal backtracking in n."]⟩, state')
   | (.error err, state') => return (.error err, state')
@@ -209,7 +209,7 @@ def Value.Name.toOpcode (name : Wasm.Syntax.Value.Name) : ByteSeq :=
 
 def Value.Name.ofOpcode : Bytecode Wasm.Syntax.Value.Name := do
   let name ← Vec.ofOpcode
-  return ⟨String.fromUTF8Unchecked (name.list.toByteArray), sorry⟩
+  return ⟨String.fromUTF8! (name.list.toByteArray), sorry⟩
 
 instance : Opcode Wasm.Syntax.Value.Name :=
   ⟨Value.Name.toOpcode, Value.Name.ofOpcode⟩

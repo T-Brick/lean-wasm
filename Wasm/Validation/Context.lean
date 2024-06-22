@@ -1,7 +1,5 @@
 /- https://webassembly.github.io/spec/core/valid/conventions.html -/
-
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Index
+import Wasm.Syntax
 
 namespace Wasm.Validation
 

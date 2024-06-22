@@ -1,9 +1,6 @@
 /- https://webassembly.github.io/spec/core/valid/instructions.html -/
 
-import Wasm.Syntax.Typ
-import Wasm.Syntax.Index
-import Wasm.Syntax.Value
-import Wasm.Syntax.Instr
+import Wasm.Syntax
 import Wasm.Validation.Context
 import Wasm.Validation.Typ
 
