@@ -169,7 +169,7 @@ def Typeuse.trans : Typeuse
     let args := ⟨t₁.map (·.2), by sorry⟩
     let res  := ⟨t₂, by sorry⟩
     let func := ⟨args, res⟩
-    match s.I.typedefs.indexOf? func with
+    match s.I.typedefs.idxOf? func with
     | .some i =>
       let locals := t₁.map (·.1)
       Trans.updateI {Ident.Context.empty with locals}

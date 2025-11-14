@@ -109,18 +109,10 @@ def Unsigned.toBytes (n : { i // 0 < i }) (v : Unsigned n) : Bytes :=
   else
     let next := ⟨n.val - 8, Nat.zero_lt_sub_of_lt (Nat.lt_of_not_le h)⟩
     .cons (UInt8.ofNat (v.toNat % 256)) (toBytes next (Unsigned.ofNat (v.toNat >>> 8)))
-termination_by n.val
-decreasing_by
-  simp_wf
-  apply Nat.lt_iff_le_and_ne.mp (Nat.lt_of_not_le h)
-    |>.left
-    |> Nat.sub_lt_self (Nat.zero_lt_succ 7)
 
 -- likewise, least significant byte is at the end of the list
 def Unsigned.ofBytes (lst : Bytes)
-    : Unsigned ⟨ 8 * lst.length
-               , Nat.mul_lt_mul_of_pos_left Bytes.zero_lt_length (Nat.zero_lt_succ 7)
-               ⟩ :=
+    : Unsigned (8 * lst.length) :=
   match lst with
   | .fst b    => Unsigned.ofNat b.toNat
   | .cons b bs =>

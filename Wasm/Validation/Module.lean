@@ -1,7 +1,6 @@
 /- https://webassembly.github.io/spec/core/valid/modules.html -/
 
 import Wasm.Syntax
-import Mathlib.Data.List.Join
 import Wasm.Validation.Context
 import Wasm.Validation.Typ
 import Wasm.Validation.Statics
@@ -133,8 +132,8 @@ def Function.Index (globals : Vec Syntax.Module.Global)
                    (elems   : Vec Syntax.Module.Element)
                    (exports : Vec Syntax.Module.Export)
                    : Vec Index.Function :=
-  let globals_lst := globals.list.map (fun g => g.init.fst) |>.join
-  let elems_lst   := elems.list.map (fun e => e.init.list.map (fun (exp, _) => exp)) |>.join |>.join
+  let globals_lst := globals.list.flatMap (fun g => g.init.fst)
+  let elems_lst   := elems.list.flatMap (fun e => e.init.list.flatMap (fun (exp, _) => exp))
   let has_index   := (fun x =>
       match x.desc with
       | .func idx => .some idx

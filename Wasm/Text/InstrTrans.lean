@@ -18,7 +18,7 @@ open Wasm.Text.Module Wasm.Text.Instr
 def Label.add : Label → Trans Unit
   | .name v   => do
     let s ← get
-    match s.I.labels.indexOf? (.some v) with
+    match s.I.labels.idxOf? (.some v) with
     | .none   => Trans.updateI { s.I with labels := .some v :: s.I.labels }
     | .some i =>
       Trans.updateI { s.I with labels := .some v :: s.I.labels.set i .none }

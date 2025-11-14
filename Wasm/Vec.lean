@@ -5,7 +5,7 @@ namespace Wasm
 def Vec.max_length : Nat := Nat.pow 2 32
 
 abbrev Vec (α : Type u) := {list : List α // list.length < Vec.max_length}
-instance [DecidableEq α ]: DecidableEq (Vec α) := inferInstance
+instance [DecidableEq α] : DecidableEq (Vec α) := inferInstance
 
 namespace Vec
 

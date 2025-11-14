@@ -1,7 +1,7 @@
 import Wasm.Vec
 import Wasm.Syntax.Value
 import Numbers
--- import Mathlib.Data.Vector
+import Mathlib.Data.Vector.Basic
 open Numbers
 
 namespace Wasm.Binary
@@ -58,8 +58,8 @@ namespace Bytecode
   let s ← get
   let p := s.pos
   if h : p.val < s.seq.size then
-    let b := s.seq.get ⟨p.val, h⟩
-    let p' := ⟨p.val + 1, by simp [*]⟩
+    let b := s.seq.get p
+    let p' := ⟨p.val + 1, by simp only [add_lt_add_iff_right, h]⟩
     set (Bytecode.State.mk s.seq p' s.log)
     return b
   else errMsg "Tried parsing byte but at end of sequence."
@@ -67,10 +67,10 @@ namespace Bytecode
 @[inline] def peekByte : Bytecode Byte := do
   let s ← get
   let p := s.pos
-  if h : p.val < s.seq.size then return s.seq.get ⟨p.val, h⟩
+  if h : p.val < s.seq.size then return s.seq.get p
   else errMsg "Tried peeking byte but at end of sequence."
 
-@[inline] def takeBytes (n : Nat) : Bytecode (Vector Byte n) := do
+@[inline] def takeBytes (n : Nat) : Bytecode (List.Vector Byte n) := do
   let s ← get
   let p := s.pos
   if h₁ : p.val < s.seq.size then
@@ -101,19 +101,20 @@ def opt (p : Bytecode α) : Bytecode (Option α) := fun state => do
   | (.ok a    , state') => return (.ok (.some a), state')
   | (.error _, _)       => return (.ok .none, state)
 
-def n (v : Nat) (p : Bytecode α) : Bytecode (Vector α v) := fun state => do
-  if h : v = 0 then return (.ok ⟨[], by simp [*]⟩, state) else
-  have : Nat.succ (v - 1) = v := Nat.succ_pred h
-
-  match ← p state with
-  | (.ok a, state') =>
-    if state'.pos.val > state.pos then
-      match ← n (v - 1) p state' with
-      | (.ok as, state'')     =>
-        return (.ok (cast (by rw [this]) (Vector.cons a as)), state'')
-      | (.error err, state'') => return (.error err, state'')
-    else return (.error ⟨["Illegal backtracking in n."]⟩, state')
-  | (.error err, state') => return (.error err, state')
+def n (v : Nat) (p : Bytecode α) : Bytecode (List.Vector α v) := fun state => do
+  if h : v = 0 then
+    return (.ok ⟨[], by simp only [List.length_nil, h]⟩, state)
+  else
+    have : Nat.succ (v - 1) = v := Nat.succ_pred h
+    match ← p state with
+    | (.ok a, state') =>
+      if state'.pos.val > state.pos then
+        match ← n (v - 1) p state' with
+        | (.ok as, state'')     =>
+          return (.ok (cast (by rw [this]) (a ::ᵥ as)), state'')
+        | (.error err, state'') => return (.error err, state'')
+      else return (.error ⟨["Illegal backtracking in n."]⟩, state')
+    | (.error err, state') => return (.error err, state')
 
 @[inline] def backtrack (p : Bytecode α) : Bytecode α := fun state => do
   match ← p state with
@@ -144,7 +145,7 @@ instance {α} [Opcode α] : Opcode (Id α) := inferInstanceAs (Opcode α)
 def Byte.toOpcode : Byte → ByteSeq := ([·])
 def Byte.ofOpcode : Bytecode Byte := Bytecode.readByte
 
-nonrec def Unsigned.ofLEB128 (n : { i // 0 < i }) : Bytecode (Unsigned n) := do
+nonrec def Unsigned.ofLEB128 (n : Nat) : Bytecode (Unsigned n) := do
   let s ← get
   let lst := s.seq.toList.drop s.pos
   let init := lst.length
@@ -159,7 +160,7 @@ nonrec def Unsigned.ofLEB128 (n : { i // 0 < i }) : Bytecode (Unsigned n) := do
     set (Bytecode.State.mk s.seq pos' s.log)
     return v
 
-nonrec def Signed.ofLEB128 (n : { i // 0 < i }) : Bytecode (Signed n) := do
+nonrec def Signed.ofLEB128 (n : Nat) : Bytecode (Signed n) := do
   let s ← get
   let lst := s.seq.toList.drop s.pos
   let init := lst.length
@@ -180,16 +181,16 @@ instance : Opcode (Unsigned n) := ⟨Unsigned.toLEB128, Unsigned.ofLEB128 n⟩
 instance : Opcode (Signed n)   := ⟨Signed.toLEB128  , Signed.ofLEB128 n⟩
 instance : Opcode Nat          :=
   ⟨ Unsigned.toLEB128 ∘ (Unsigned.ofNat : Nat → Unsigned32)
-  , do let r ← Unsigned.ofLEB128 ⟨32, by simp⟩; return r.toNat
+  , do let r ← Unsigned.ofLEB128 32; return r.toNat
   ⟩
 instance : Opcode Wasm.Syntax.Value.Byte := ⟨Byte.toOpcode, Byte.ofOpcode⟩
 instance : Opcode (Wasm.Syntax.Value.FloatN nn) := ⟨sorry, sorry⟩
 
 nonrec def List.toOpcode [Opcode α] (list : List α) : ByteSeq :=
-  toOpcode list.length ++ (list.map toOpcode).join
+  toOpcode list.length ++ (list.flatMap toOpcode)
 
 nonrec def Vec.toOpcode [Opcode α] (vec : Vec α) : ByteSeq :=
-  toOpcode vec.length ++ (vec.list.map toOpcode).join
+  toOpcode vec.length ++ (vec.list.flatMap toOpcode)
 
 nonrec def Vec.ofOpcode [inst : Opcode α] : Bytecode (Vec α) :=
   Bytecode.err_log "Parsing vector." do

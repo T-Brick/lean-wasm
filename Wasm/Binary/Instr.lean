@@ -12,7 +12,7 @@ namespace Wasm.Binary.Instr
 
 open Wasm.Syntax Wasm.Syntax.Instr
 
-private abbrev Signed33 := Signed ⟨33, by simp⟩
+private abbrev Signed33 := Signed 33
 
 nonrec def BlockType.toOpcode : BlockType → ByteSeq
   | .value .none     => [0x40]

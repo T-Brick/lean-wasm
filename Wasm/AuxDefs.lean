@@ -23,13 +23,13 @@ theorem Nat.le_trans_lt {a b c : Nat} (h₁ : a ≤ b) (h₂ : b < c) : a < c :=
   | step h => apply Nat.lt_trans (Nat.lt_succ_of_le h) h₂
 
 theorem Nat.two_pow_succ_pred : Nat.succ (Nat.pred (2 ^ n)) = 2 ^ n :=
-  Nat.lt_iff_le_and_ne.mp (Nat.pos_pow_of_pos n (Nat.zero_lt_succ 1))
+  Nat.lt_iff_le_and_ne.mp (Nat.pow_pos (a := 2) (by decide))
     |>.right
     |>.symm
     |> Nat.succ_pred
 
 theorem Nat.zero_lt_two_pow {n : Nat} : 0 < 2 ^ n := by
-  exact Nat.pos_pow_of_pos n ((Nat.zero_lt_succ 1))
+  exact Nat.pow_pos (a := 2) (by decide)
 
 
 def String.concatWith [ToString α] (str : String) (list : List α) : String :=
@@ -40,3 +40,6 @@ def String.concatWith [ToString α] (str : String) (list : List α) : String :=
   apply Or.elim (Nat.le_iff_lt_or_eq.mp h₂) <;> intro h₂
   . exact Nat.sub_lt_sub_left (Nat.lt_trans h₁ h₂) h₁
   . simp [*] at *; exact h₁
+
+def List.get? (as : List α) (n : Nat) : Option α :=
+  if h : n < as.length then .some (as.get ⟨n, h⟩) else .none

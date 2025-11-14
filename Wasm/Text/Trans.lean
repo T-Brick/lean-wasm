@@ -115,6 +115,6 @@ end Trans.Error
     (v : Option Ident)
     (msg : String := "")
     : Trans Unsigned32 := do
-  match (f (← get).I).indexOf? v with
+  match (f (← get).I).idxOf? v with
   | .some x => return Numbers.Unsigned.ofNat x
   | .none   => Trans.Error.errMsg s!"Error finding {msg} Ident."

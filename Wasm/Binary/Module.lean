@@ -64,7 +64,7 @@ nonrec def Section.Custom.toOpcode (custom : Custom) : ByteSeq :=
      Wasm.Binary.toOpcode (0 : Byte)
   ++ Wasm.Binary.toOpcode custom.size
   ++ Wasm.Binary.toOpcode custom.name
-  ++ (custom.data.map Wasm.Binary.toOpcode).join
+  ++ custom.data.flatMap Wasm.Binary.toOpcode
 
 nonrec def Section.Custom.ofOpcode : Bytecode Custom :=
   Bytecode.err_log "Parsing custom section." do
@@ -455,10 +455,11 @@ nonrec def ofOpcode : Bytecode Module :=
       if m ≠ Unsigned.ofNat datasec.toVec.length then
         Bytecode.errMsg "Data/Datacount section mismatch."
     | .empty =>
-      if (codesec.toVec.list.map (Code.dataidx)).join.length ≠ 0 then
+      if (codesec.toVec.list.flatMap (Code.dataidx)).length ≠ 0 then
         Bytecode.errMsg "Data/Datacount section mismatch."
 
-  let funcs : Vector Module.Function n := Vector.ofFn (fun (i : Fin n) =>
+  let funcs : List.Vector Module.Function n :=
+    List.Vector.ofFn (fun (i : Fin n) =>
       match fs : funcsec with
       | .data _ typeidx =>
         match cs : codesec with
