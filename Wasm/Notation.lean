@@ -5,16 +5,15 @@ import Wasm.Text.Notation.Typ
 import Wasm.Text.Notation.Index
 import Wasm.Text.Notation.Instr
 
-/- Currently only instructions/expressions can be made with the following
-syntax:
+namespace Wasm.Text.Notation
 
-```
-def example := [wat_expr|
+/-
+Currently only instructions/expressions can be made with the following syntax:
+-/
+example := >>wat_expr|
   i32.const 2
   i32.const 5
   i32.mul
-]
-```
+<<
 
-Currently a little buggy atm :)
--/
+/- Eventually will add more WAT module level syntax : ) -/
