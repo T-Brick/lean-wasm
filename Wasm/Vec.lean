@@ -2,7 +2,7 @@ import Wasm.AuxDefs
 
 namespace Wasm
 
-def Vec.max_length : Nat := Nat.pow 2 32
+abbrev Vec.max_length : Nat := Nat.pow 2 32
 
 abbrev Vec (α : Type u) := {list : List α // list.length < Vec.max_length}
 instance [DecidableEq α] : DecidableEq (Vec α) := inferInstance
@@ -10,7 +10,7 @@ instance [DecidableEq α] : DecidableEq (Vec α) := inferInstance
 namespace Vec
 
 @[reducible] def list : Vec α → List α := (·.val)
-@[reducible] def maxLen (self : Vec α) : List.length self.list < Vec.max_length :=
+theorem maxLen (self : Vec α) : List.length self.list < Vec.max_length :=
   self.property
 
 nonrec def toString [ToString α] (v : Vec α) : String :=

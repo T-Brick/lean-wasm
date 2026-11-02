@@ -30,7 +30,7 @@ def Ident.mkValid! (name : String) : Ident :=
   | .none   => ⟨"!(INVALID IDENT)!", sorry ,sorry⟩
 
 def Ident.parse (name : String) : Option Ident :=
-  if name.startsWith "$" then Ident.mkValid (name.drop 1) else none
+  if name.startsWith "$" then Ident.mkValid (name.drop 1).copy else none
 
 def Ident.parse! (name : String) : Ident :=
   match Ident.parse name with

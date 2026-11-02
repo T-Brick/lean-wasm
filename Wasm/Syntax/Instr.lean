@@ -15,6 +15,11 @@ namespace Numeric
 inductive Size
 | double | quad -- 32/64
 
+def Size.toString : Size → String
+| .double => "double"
+| .quad => "quad"
+instance : ToString Size := ⟨Size.toString⟩
+
 def Size.toBits : Size → {i : Nat // i > 0}
   | double => ⟨32, by simp⟩
   | quad   => ⟨64, by simp⟩

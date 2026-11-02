@@ -31,7 +31,6 @@ nonrec def BlockType.ofOpcode : Bytecode BlockType :=
 
 instance : Opcode BlockType := ⟨BlockType.toOpcode, BlockType.ofOpcode⟩
 
-
 def Pseudo.toOpcode : Pseudo → Byte
   | .wasm_end  => 0x0B
   | .wasm_else => 0x05
@@ -262,7 +261,7 @@ nonrec def ofOpcode : Bytecode (Integer nn) :=
       <|> (return Integer.test     (← Test.ofOpcode32    ))
       <|> (return Integer.relation (← Relation.ofOpcode32))
       <|> (do match ← Bytecode.readByte with
-              | 0xA7 => return .wrap_i64
+              | 0xA7 => Bytecode.validateSize .wrap_i64
               | 0xA8 => return .trunc_f .double .s
               | 0xA9 => return .trunc_f .double .u
               | 0xAA => return .trunc_f .quad   .s
@@ -285,8 +284,8 @@ nonrec def ofOpcode : Bytecode (Integer nn) :=
       <|> (return Integer.test     (← Test.ofOpcode64    ))
       <|> (return Integer.relation (← Relation.ofOpcode64))
       <|> (do match ← Bytecode.readByte with
-              | 0xAC => return .extend_i32 .s
-              | 0xAD => return .extend_i32 .u
+              | 0xAC => Bytecode.validateSize (.extend_i32 .s)
+              | 0xAD => Bytecode.validateSize (.extend_i32 .u)
               | 0xAE => return .trunc_f .double .s
               | 0xAF => return .trunc_f .double .s
               | 0xB0 => return .trunc_f .quad   .s
@@ -294,7 +293,7 @@ nonrec def ofOpcode : Bytecode (Integer nn) :=
               | 0xBD => return .reinterpret_f
               | 0xC2 => return .extend8_s
               | 0xC3 => return .extend16_s
-              | 0xC4 => return .extend32_s
+              | 0xC4 => Bytecode.validateSize .extend32_s
               | 0xFC =>
                 let v ← ofOpcode
                 if v = 4 then return trunc_sat_f .double .s
@@ -467,7 +466,7 @@ nonrec def ofOpcode : Bytecode (Float nn) :=
                 | 0xB3 => return .convert_i .double .u
                 | 0xB4 => return .convert_i .quad   .s
                 | 0xB5 => return .convert_i .quad   .u
-                | 0xB6 => return .demote_f64
+                | 0xB6 => Bytecode.validateSize .demote_f64
                 | 0xBE => return .reinterpret_i
                 | _    => Bytecode.err
             )
@@ -480,7 +479,7 @@ nonrec def ofOpcode : Bytecode (Float nn) :=
                 | 0xB8 => return .convert_i .double .u
                 | 0xB9 => return .convert_i .quad   .s
                 | 0xBA => return .convert_i .quad   .u
-                | 0xBB => return .promote_f32
+                | 0xBB => Bytecode.validateSize .promote_f32
                 | 0xBF => return .reinterpret_i
                 | _    => Bytecode.err
             )
@@ -635,12 +634,12 @@ nonrec def Integer.ofOpcode : Bytecode (Integer nn) :=
     | 0x31 => return (Integer.load8  .u) (← ofOpcode)
     | 0x32 => return (Integer.load16 .s) (← ofOpcode)
     | 0x33 => return (Integer.load16 .u) (← ofOpcode)
-    | 0x34 => return (Integer.load32 .s) (← ofOpcode)
-    | 0x35 => return (Integer.load32 .u) (← ofOpcode)
+    | 0x34 => Bytecode.validateSize <| (Integer.load32 .s) (← ofOpcode)
+    | 0x35 => Bytecode.validateSize <| (Integer.load32 .u) (← ofOpcode)
     | 0x37 => return (Integer.store    ) (← ofOpcode)
     | 0x3C => return (Integer.store8   ) (← ofOpcode)
     | 0x3D => return (Integer.store16  ) (← ofOpcode)
-    | 0x3E => return (Integer.store32  ) (← ofOpcode)
+    | 0x3E => Bytecode.validateSize <| (Integer.store32  ) (← ofOpcode)
     | _            => Bytecode.err
 
 instance : Opcode (Integer nn) := ⟨Integer.toOpcode, Integer.ofOpcode⟩

@@ -61,9 +61,8 @@ def run (p : Parsed) : IO UInt32 := do
     return 1
   | (.ok mod, s) =>
     match emit with
-    | .wat => Wasm.outputText p (Wasm.Text.Module.toString mod)
-    | .wasm => Wasm.outputBin p input (Wasm.Binary.Module.toOpcode mod)
-  return 0
+    | .wat => return ← Wasm.outputText p (Wasm.Text.Module.toString mod)
+    | .wasm => return ← Wasm.outputBin p input (Wasm.Binary.Module.toOpcode mod)
 
 def topCmd : Cmd := `[Cli|
   wasm VIA run; [version]

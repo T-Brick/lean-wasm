@@ -328,10 +328,10 @@ nonrec abbrev Section.Code := Section 10 (Vec Code)
 nonrec def Data.toOpcode (data : Data) : ByteSeq :=
   match data.mode with
   | .passive => toOpcode (1 : Unsigned32) ++ toOpcode data.init
-  | .active (0 : Unsigned32) e =>
-    toOpcode (0 : Unsigned32) ++ toOpcode e ++ toOpcode data.init
   | .active x e =>
-    toOpcode (2 : Unsigned32) ++ toOpcode x ++ toOpcode e ++ toOpcode data.init
+    if x == (0 : Unsigned32)
+    then toOpcode (0 : Unsigned32) ++ toOpcode e ++ toOpcode data.init
+    else toOpcode (2 : Unsigned32) ++ toOpcode x ++ toOpcode e ++ toOpcode data.init
 
 nonrec def Data.ofOpcode : Bytecode Data :=
   Bytecode.err_log "Parsing data section." do

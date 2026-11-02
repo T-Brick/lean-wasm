@@ -1,5 +1,6 @@
 import Wasm.Vec
 import Wasm.Syntax.Value
+import Wasm.Syntax.Instr
 import Numbers
 import Mathlib.Data.Vector.Basic
 open Numbers
@@ -132,6 +133,14 @@ def or (p₁ p₂ : Bytecode α) : Bytecode α := fun state => do
 instance : OrElse (Bytecode α) where
   orElse p q := or p (q ())
 
+def validateSize {nn : Syntax.Instr.Numeric.Size}
+    {α : Syntax.Instr.Numeric.Size → Type}
+    (ret : α mm) : Bytecode (α nn) := do
+  match hn : nn, hm : mm with
+  | .quad, .quad
+  | .double, .double => return cast (by simp only [hm, hn]) ret
+  | _, _ => errMsg s!"Could not validate size! Expected {mm} but got {nn}."
+
 end Bytecode
 
 class Opcode (α : Type) where
@@ -198,7 +207,7 @@ nonrec def Vec.ofOpcode [inst : Opcode α] : Bytecode (Vec α) :=
   Bytecode.err_log s!"Parsing vector length={len}." do
   let vector ← Bytecode.n len.toNat (inst.ofOpcode)
   return ⟨vector.toList, by
-    simp [Unsigned.toNat]
+    rw [vector.toList_length]
     exact len.isLt
   ⟩
 
